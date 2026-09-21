@@ -1,0 +1,432 @@
+@import "tailwindcss";
+
+:root {
+  /* Primary */
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-300: #93c5fd;
+  --color-primary-400: #60a5fa;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+  --color-primary-900: #1e3a8a;
+
+  /* Neutral */
+  --color-neutral-0: #ffffff;
+  --color-neutral-50: #fafafa;
+  --color-neutral-100: #f4f4f5;
+  --color-neutral-200: #e4e4e7;
+  --color-neutral-300: #d4d4d8;
+  --color-neutral-400: #a1a1aa;
+  --color-neutral-500: #71717a;
+  --color-neutral-600: #52525b;
+  --color-neutral-700: #3f3f46;
+  --color-neutral-800: #27272a;
+  --color-neutral-900: #18181b;
+
+  /* Semantic */
+  --color-success-50: #f0fdf4;
+  --color-success-100: #dcfce7;
+  --color-success-500: #22c55e;
+  --color-success-600: #16a34a;
+  --color-success-700: #15803d;
+
+  --color-warning-50: #fffbeb;
+  --color-warning-100: #fef3c7;
+  --color-warning-500: #f59e0b;
+  --color-warning-600: #d97706;
+  --color-warning-700: #b45309;
+
+  --color-error-50: #fff1f2;
+  --color-error-100: #ffe4e6;
+  --color-error-500: #ef4444;
+  --color-error-600: #dc2626;
+  --color-error-700: #b91c1c;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  --duration-fast: 100ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
+}
+
+@theme inline {
+  --color-primary-50: var(--color-primary-50);
+  --color-primary-100: var(--color-primary-100);
+  --color-primary-200: var(--color-primary-200);
+  --color-primary-300: var(--color-primary-300);
+  --color-primary-400: var(--color-primary-400);
+  --color-primary-500: var(--color-primary-500);
+  --color-primary-600: var(--color-primary-600);
+  --color-primary-700: var(--color-primary-700);
+  --color-primary-800: var(--color-primary-800);
+  --color-primary-900: var(--color-primary-900);
+
+  --color-neutral-0: var(--color-neutral-0);
+  --color-neutral-50: var(--color-neutral-50);
+  --color-neutral-100: var(--color-neutral-100);
+  --color-neutral-200: var(--color-neutral-200);
+  --color-neutral-300: var(--color-neutral-300);
+  --color-neutral-400: var(--color-neutral-400);
+  --color-neutral-500: var(--color-neutral-500);
+  --color-neutral-600: var(--color-neutral-600);
+  --color-neutral-700: var(--color-neutral-700);
+  --color-neutral-800: var(--color-neutral-800);
+  --color-neutral-900: var(--color-neutral-900);
+
+  --color-success-50: var(--color-success-50);
+  --color-success-100: var(--color-success-100);
+  --color-success-500: var(--color-success-500);
+  --color-success-600: var(--color-success-600);
+  --color-success-700: var(--color-success-700);
+
+  --color-warning-50: var(--color-warning-50);
+  --color-warning-100: var(--color-warning-100);
+  --color-warning-500: var(--color-warning-500);
+  --color-warning-600: var(--color-warning-600);
+  --color-warning-700: var(--color-warning-700);
+
+  --color-error-50: var(--color-error-50);
+  --color-error-100: var(--color-error-100);
+  --color-error-500: var(--color-error-500);
+  --color-error-600: var(--color-error-600);
+  --color-error-700: var(--color-error-700);
+
+  --font-sans: "Pretendard Variable", "Pretendard", -apple-system,
+    BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", Consolas, monospace;
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-neutral-50);
+  color: var(--color-neutral-800);
+  font-family: var(--font-sans);
+}
+
+/* TipTap / 공개 HTML 본문 */
+.prose-editor p,
+.prose-content p {
+  margin: 0 0 0.85em;
+  line-height: 1.7;
+  color: var(--color-neutral-700);
+  font-size: 1rem;
+}
+
+.prose-editor h2,
+.prose-content h2 {
+  margin: 1.4em 0 0.5em;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--color-neutral-900);
+  letter-spacing: -0.02em;
+}
+
+.prose-editor h3,
+.prose-content h3 {
+  margin: 1.2em 0 0.4em;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-neutral-800);
+}
+
+.prose-editor ul,
+.prose-content ul {
+  margin: 0 0 0.85em;
+  padding-left: 1.25rem;
+  list-style: disc;
+}
+
+.prose-editor ol,
+.prose-content ol {
+  margin: 0 0 0.85em;
+  padding-left: 1.25rem;
+  list-style: decimal;
+}
+
+.prose-editor li,
+.prose-content li {
+  margin: 0.25em 0;
+  line-height: 1.6;
+}
+
+.prose-editor blockquote,
+.prose-editor .editor-blockquote,
+.prose-content blockquote {
+  margin: 0.85em 0;
+  padding: 0.35em 0 0.35em 1rem;
+  border-left: 3px solid var(--color-neutral-200);
+  color: var(--color-neutral-600);
+}
+
+/* 콜아웃 안·옆 인용이 남아 회색 바가 겹치지 않게 */
+.prose-editor .callout blockquote,
+.prose-content .callout blockquote {
+  margin: 0;
+  padding: 0;
+  border-left: none;
+  color: inherit;
+}
+
+.prose-editor pre,
+.prose-content pre {
+  position: relative;
+  margin: 0.85em 0;
+  padding: 0.85rem 1rem;
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid var(--color-neutral-200);
+  background: var(--color-neutral-900);
+  color: var(--color-neutral-100);
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+/* 제목 헤더 + 코드박스 (스크린샷형) */
+.prose-content figure.code-block-figure,
+.prose-editor figure.code-block-figure {
+  margin: 0.85em 0;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid var(--color-neutral-200);
+  background: var(--color-neutral-100);
+}
+
+.prose-content figure.code-block-figure > figcaption.code-block-caption,
+.prose-content figure.code-block-figure > figcaption,
+.prose-editor figure.code-block-figure > figcaption {
+  margin: 0;
+  padding: 0.55rem 1rem;
+  border-bottom: 1px solid var(--color-neutral-200);
+  background: var(--color-neutral-100);
+  color: var(--color-neutral-700);
+  font-family: var(--font-sans), Pretendard, sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.prose-content figure.code-block-figure > pre,
+.prose-editor figure.code-block-figure > pre {
+  margin: 0;
+  border: none;
+  border-radius: 0;
+}
+
+.prose-editor pre[data-lang-label],
+.prose-content pre[data-lang-label],
+pre.code-fence[data-lang-label] {
+  padding-top: 1.85rem;
+}
+
+.prose-editor pre[data-lang-label]::before,
+.prose-content pre[data-lang-label]::before,
+pre.code-fence[data-lang-label]::before {
+  content: attr(data-lang-label);
+  position: absolute;
+  top: 0.45rem;
+  right: 0.7rem;
+  font-family: var(--font-sans), Pretendard, sans-serif;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--color-neutral-400);
+  pointer-events: none;
+  user-select: none;
+}
+
+.prose-editor pre code,
+.prose-content pre code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  font-size: inherit;
+}
+
+/* 에디터 NodeView 안 pre는 이중 테두리/패딩 제거 */
+.prose-editor .code-block-node pre.code-block-pre,
+.prose-editor .code-block-node pre {
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  overflow: visible;
+}
+
+.prose-editor .code-block-node pre[data-lang-label]::before {
+  content: none;
+}
+
+/* highlight.js — 스크린샷과 비슷한 다크 구문 강조 */
+.hljs {
+  color: #e5e7eb;
+  background: transparent;
+}
+
+.hljs-comment,
+.hljs-quote {
+  color: #6b7280;
+  font-style: italic;
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-section,
+.hljs-link {
+  color: #7dd3fc;
+}
+
+.hljs-function .hljs-keyword {
+  color: #7dd3fc;
+}
+
+.hljs-title,
+.hljs-title.function_,
+.hljs-title.class_,
+.hljs-name,
+.hljs-attr {
+  color: #fbbf24;
+}
+
+.hljs-string,
+.hljs-meta .hljs-string,
+.hljs-regexp,
+.hljs-template-tag,
+.hljs-template-variable {
+  color: #86efac;
+}
+
+.hljs-variable,
+.hljs-params,
+.hljs-number,
+.hljs-bullet,
+.hljs-symbol {
+  color: #fdba74;
+}
+
+.hljs-tag,
+.hljs-built_in,
+.hljs-type,
+.hljs-attribute {
+  color: #f0abfc;
+}
+
+.hljs-meta,
+.hljs-doctag,
+.hljs-deletion {
+  color: #94a3b8;
+}
+
+.hljs-addition {
+  color: #86efac;
+}
+
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-strong {
+  font-weight: 700;
+}
+
+.prose-editor code,
+.prose-content code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+}
+
+.prose-editor :not(pre) > code,
+.prose-content :not(pre) > code {
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  background: var(--color-neutral-100);
+  color: var(--color-neutral-700);
+}
+
+.prose-editor a,
+.prose-content a {
+  color: var(--color-primary-600);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* 색상 박스 (callout) */
+.prose-editor .callout,
+.prose-content .callout {
+  margin: 0.85em 0;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.prose-editor .callout::before,
+.prose-content .callout::before {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.8;
+  content: attr(data-label);
+}
+
+.prose-editor .callout > p:last-child,
+.prose-content .callout > p:last-child {
+  margin-bottom: 0;
+}
+
+.prose-editor .callout-info,
+.prose-content .callout-info {
+  border-color: var(--color-primary-200);
+  background: var(--color-primary-50);
+  color: var(--color-primary-800);
+}
+
+.prose-editor .callout-tip,
+.prose-content .callout-tip {
+  border-color: color-mix(in srgb, var(--color-success-500) 20%, transparent);
+  background: var(--color-success-50);
+  color: var(--color-success-700);
+}
+
+.prose-editor .callout-warn,
+.prose-content .callout-warn {
+  border-color: color-mix(in srgb, var(--color-warning-500) 20%, transparent);
+  background: var(--color-warning-50);
+  color: var(--color-warning-700);
+}
+
+.prose-editor .is-editor-empty:first-child::before,
+.prose-editor p.is-empty:first-child::before {
+  float: left;
+  height: 0;
+  color: var(--color-neutral-400);
+  content: attr(data-placeholder);
+  pointer-events: none;
+}
+
+.ProseMirror-focused {
+  outline: none;
+}
