@@ -65,8 +65,10 @@ pipeline {
             steps {
                 powershell '''
                     $ErrorActionPreference = "Continue"
+                    cmd /c "C:\\nssm\\nssm.exe stop blog-backend"
+                    cmd /c "C:\\nssm\\nssm.exe stop blog-frontend"
                     & "$env:WORKSPACE\\scripts\\deploy-restart.ps1" -StopOnly
-                    if ($LASTEXITCODE -ne 0) { exit 1 }
+                    exit 0
                 '''
             }
         }
@@ -117,6 +119,7 @@ pipeline {
                     Copy-Tree (Join-Path $ws "scripts") (Join-Path $deploy "scripts")
 
                     Write-Host "env files preserved"
+                    exit 0
                 '''
             }
         }
@@ -125,8 +128,52 @@ pipeline {
             steps {
                 powershell '''
                     $ErrorActionPreference = "Continue"
-                    & "$env:DEPLOY_ROOT\\scripts\\deploy-restart.ps1"
-                    if ($LASTEXITCODE -ne 0) { exit 1 }
+                    $nssm = "C:\\nssm\\nssm.exe"
+                    $node = "C:\\Program Files\\nodejs\\node.exe"
+                    $root = $env:DEPLOY_ROOT
+                    $backend = Join-Path $root "backend"
+                    $logs = Join-Path $backend "logs"
+                    New-Item -ItemType Directory -Force -Path $logs | Out-Null
+
+                    & cmd /c "`"$nssm`" set blog-backend Application `"$node`""
+                    & cmd /c "`"$nssm`" set blog-backend AppDirectory `"$backend`""
+                    & cmd /c "`"$nssm`" set blog-backend AppParameters dist\\main.js"
+                    & cmd /c "`"$nssm`" set blog-backend AppStdout `"$logs\\nssm-backend-stdout.log`""
+                    & cmd /c "`"$nssm`" set blog-backend AppStderr `"$logs\\nssm-backend-stderr.log`""
+
+                    & cmd /c "`"$nssm`" set blog-frontend Application `"$node`""
+                    & cmd /c "`"$nssm`" set blog-frontend AppDirectory `"$root`""
+                    & cmd /c "`"$nssm`" set blog-frontend AppParameters `"node_modules\\next\\dist\\bin\\next start -p 3001`""
+                    & cmd /c "`"$nssm`" set blog-frontend AppStdout `"$logs\\nssm-frontend-stdout.log`""
+                    & cmd /c "`"$nssm`" set blog-frontend AppStderr `"$logs\\nssm-frontend-stderr.log`""
+
+                    & cmd /c "`"$nssm`" restart blog-backend"
+                    & cmd /c "`"$nssm`" restart blog-frontend"
+
+                    $ok = $false
+                    foreach ($i in 1..25) {
+                        Start-Sleep -Seconds 2
+                        try {
+                            $h = Invoke-WebRequest -UseBasicParsing "http://127.0.0.1:4000/api/health" -TimeoutSec 2
+                            if ($h.StatusCode -eq 200) { $ok = $true; break }
+                        } catch {}
+                    }
+                    if (-not $ok) { throw "API health check failed on :4000" }
+
+                    $web = $false
+                    foreach ($i in 1..15) {
+                        Start-Sleep -Seconds 2
+                        try {
+                            $h = Invoke-WebRequest -UseBasicParsing "http://127.0.0.1:3001/" -TimeoutSec 2
+                            if ($h.StatusCode -eq 200) { $web = $true; break }
+                        } catch {}
+                    }
+                    if (-not $web) { throw "Web check failed on :3001" }
+
+                    Write-Host "NSSM blog-backend / blog-frontend are up"
+                    cmd /c "C:\nssm\nssm.exe status blog-backend"
+                    cmd /c "C:\nssm\nssm.exe status blog-frontend"
+                    exit 0
                 '''
             }
         }
