@@ -27,7 +27,7 @@ pipeline {
             steps {
                 dir('backend') {
                     powershell '''
-                        $ErrorActionPreference = "Stop"
+                        $ErrorActionPreference = "Continue"
                         $env:Path = "$env:NODE_DIR;" + $env:Path
                         Write-Host "===== Backend Build ====="
                         node -v
@@ -47,7 +47,7 @@ pipeline {
         stage('Frontend Build') {
             steps {
                 powershell '''
-                    $ErrorActionPreference = "Stop"
+                    $ErrorActionPreference = "Continue"
                     $env:Path = "$env:NODE_DIR;" + $env:Path
                     Write-Host "===== Frontend Build ====="
                     npm install --no-fund --no-audit
@@ -61,10 +61,20 @@ pipeline {
             }
         }
 
+        stage('Stop running app') {
+            steps {
+                powershell '''
+                    $ErrorActionPreference = "Continue"
+                    & "$env:WORKSPACE\\scripts\\deploy-restart.ps1" -StopOnly
+                    if ($LASTEXITCODE -ne 0) { exit 1 }
+                '''
+            }
+        }
+
         stage('Copy to deploy') {
             steps {
                 powershell '''
-                    $ErrorActionPreference = "Stop"
+                    $ErrorActionPreference = "Continue"
                     $ws = $env:WORKSPACE
                     $deploy = $env:DEPLOY_ROOT
                     $backend = Join-Path $deploy "backend"
@@ -114,7 +124,7 @@ pipeline {
         stage('Restart') {
             steps {
                 powershell '''
-                    $ErrorActionPreference = "Stop"
+                    $ErrorActionPreference = "Continue"
                     & "$env:DEPLOY_ROOT\\scripts\\deploy-restart.ps1"
                     if ($LASTEXITCODE -ne 0) { exit 1 }
                 '''

@@ -1,9 +1,13 @@
 # Technical-Blog 프로세스 재시작 (API :4000, Web :3001)
 # .env 는 건드리지 않는다.
+param(
+    [switch]$StopOnly,
+    [string]$Root = (Split-Path $PSScriptRoot -Parent)
+)
+
 $ErrorActionPreference = 'Stop'
 $node = 'C:\Program Files\nodejs\node.exe'
-$root = Split-Path $PSScriptRoot -Parent
-$backend = Join-Path $root 'backend'
+$backend = Join-Path $Root 'backend'
 $logDir = Join-Path $backend 'logs'
 New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 
@@ -19,8 +23,13 @@ Stop-Port 4000
 Stop-Port 3001
 Start-Sleep -Seconds 2
 
+if ($StopOnly) {
+    Write-Host 'stopped blog ports 4000 and 3001'
+    exit 0
+}
+
 Start-Process -FilePath $node -ArgumentList 'dist\main.js' -WorkingDirectory $backend -WindowStyle Hidden
-Start-Process -FilePath $node -ArgumentList 'node_modules\next\dist\bin\next start -p 3001' -WorkingDirectory $root -WindowStyle Hidden
+Start-Process -FilePath $node -ArgumentList 'node_modules\next\dist\bin\next start -p 3001' -WorkingDirectory $Root -WindowStyle Hidden
 
 $ok = $false
 foreach ($i in 1..20) {
