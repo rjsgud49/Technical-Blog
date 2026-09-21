@@ -379,6 +379,79 @@ pre.code-fence[data-lang-label]::before {
   background: var(--color-neutral-100);
 }
 
+.prose-editor .article-image-wrap,
+.prose-content .article-image-wrap {
+  margin: 1em 0;
+  max-width: 100%;
+}
+
+.prose-editor .article-image-box {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  line-height: 0;
+}
+
+.prose-editor .article-image-wrap img,
+.prose-content .article-image-wrap img,
+.prose-content img.article-image {
+  margin: 0;
+}
+
+.prose-editor .article-image-wrap[data-selected="true"] img {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+}
+
+.article-image-handle {
+  position: absolute;
+  z-index: 2;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--color-primary-500);
+  border-radius: 2px;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 80%);
+}
+
+.article-image-handle-nw {
+  top: -5px;
+  left: -5px;
+  cursor: nwse-resize;
+}
+
+.article-image-handle-ne {
+  top: -5px;
+  right: -5px;
+  cursor: nesw-resize;
+}
+
+.article-image-handle-sw {
+  bottom: -5px;
+  left: -5px;
+  cursor: nesw-resize;
+}
+
+.article-image-handle-se {
+  right: -5px;
+  bottom: -5px;
+  cursor: nwse-resize;
+}
+
+.article-image-size {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  border-radius: 4px;
+  background: rgb(23 23 23 / 72%);
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #fff;
+  pointer-events: none;
+}
+
 /* 색상 박스 (callout) */
 .prose-editor .callout,
 .prose-content .callout {

@@ -3,7 +3,6 @@
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Blockquote from "@tiptap/extension-blockquote";
-import Image from "@tiptap/extension-image";
 import Placeholder from "@tiptap/extension-placeholder";
 import Underline from "@tiptap/extension-underline";
 import Link from "@tiptap/extension-link";
@@ -15,6 +14,7 @@ import {
   type CalloutVariant,
 } from "@/components/writer/extensions/Callout";
 import { CodeBlockWithLanguage } from "@/components/writer/extensions/CodeBlockWithLanguage";
+import { ResizableImage } from "@/components/writer/extensions/ResizableImage";
 
 /** 인용은 문단만 — 콜아웃과 중첩되어 회색 바가 생기는 것 방지 */
 const EditorBlockquote = Blockquote.extend({
@@ -77,11 +77,7 @@ export function WysiwygEditor({
         HTMLAttributes: { class: "text-primary-600 underline" },
       }),
       Callout,
-      Image.configure({
-        inline: false,
-        allowBase64: true,
-        HTMLAttributes: { class: "article-image" },
-      }),
+      ResizableImage,
       Placeholder.configure({ placeholder }),
     ],
     content: toEditorHtml(value),
@@ -355,6 +351,51 @@ export function WysiwygEditor({
           active={editor.isActive("image")}
           onClick={() => fileInputRef.current?.click()}
         />
+        {editor.isActive("image") && (
+          <>
+            <Sep />
+            <ToolbarBtn
+              label="작게"
+              onClick={() =>
+                editor
+                  .chain()
+                  .focus()
+                  .updateAttributes("image", { width: 240 })
+                  .run()
+              }
+            />
+            <ToolbarBtn
+              label="중간"
+              onClick={() =>
+                editor
+                  .chain()
+                  .focus()
+                  .updateAttributes("image", { width: 400 })
+                  .run()
+              }
+            />
+            <ToolbarBtn
+              label="크게"
+              onClick={() =>
+                editor
+                  .chain()
+                  .focus()
+                  .updateAttributes("image", { width: 640 })
+                  .run()
+              }
+            />
+            <ToolbarBtn
+              label="원본"
+              onClick={() =>
+                editor
+                  .chain()
+                  .focus()
+                  .updateAttributes("image", { width: null })
+                  .run()
+              }
+            />
+          </>
+        )}
         <ToolbarBtn
           label="⸻"
           onClick={() => editor.chain().focus().setHorizontalRule().run()}
