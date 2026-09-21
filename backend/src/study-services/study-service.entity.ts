@@ -17,7 +17,7 @@ export class StudyService {
   @Column({ name: 'short_name', length: 8, default: 'FD' })
   shortName: string;
 
-  @Column({ type: 'text', default: '' })
+  @Column({ type: 'text' })
   description: string;
 
   /** URL path slug — /{path} */
