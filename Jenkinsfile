@@ -14,6 +14,7 @@ pipeline {
         NODE_DIR = 'C:\\Program Files\\nodejs'
         NEXT_TELEMETRY_DISABLED = '1'
         NEXT_PUBLIC_API_URL = '/api'
+        NEXT_PUBLIC_DATA_SOURCE = 'api'
     }
 
     stages {
@@ -50,6 +51,11 @@ pipeline {
                     $ErrorActionPreference = "Continue"
                     $env:Path = "$env:NODE_DIR;" + $env:Path
                     Write-Host "===== Frontend Build ====="
+                    $deployEnv = Join-Path $env:DEPLOY_ROOT ".env.local"
+                    if (Test-Path $deployEnv) {
+                        Copy-Item $deployEnv ".env.local" -Force
+                        Write-Host "copied deploy .env.local for NEXT_PUBLIC bake"
+                    }
                     npm install --no-fund --no-audit
                     if ($LASTEXITCODE -ne 0) { exit 1 }
                     npm run build

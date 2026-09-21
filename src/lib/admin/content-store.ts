@@ -8,6 +8,7 @@ import type {
   UpdatePostInput,
 } from "@/types/admin";
 import { apiContentAdminRepository } from "@/lib/admin/api-content-store";
+import { isApiMode } from "@/lib/data-mode";
 import { DEFAULT_FIELD } from "@/lib/field-path";
 import { normalizeSlug, slugify } from "@/lib/slugify";
 
@@ -391,8 +392,7 @@ export const localContentAdminRepository: ContentAdminRepository = {
 };
 
 export function getContentAdminRepository(): ContentAdminRepository {
-  const source = process.env.NEXT_PUBLIC_DATA_SOURCE ?? "local";
-  if (source === "api") return apiContentAdminRepository;
+  if (isApiMode()) return apiContentAdminRepository;
   return localContentAdminRepository;
 }
 
