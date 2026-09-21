@@ -155,6 +155,10 @@ const onSelectMemo = useMemo(
         warn(
           "모든 핸들러를 useCallback으로 감싸는 습관은 피하세요. 팀 가독성을 해치고, 의존성 실수로 stale 버그를 키웁니다.",
         ),
+        info(
+          term("react-compiler", "React Compiler"),
+          "가 켜진 프로젝트에서는 이 훅들을 “기본 방어”로 쓰지 마세요. 측정된 병목, 또는 참조 동일성이 외부 계약인 자리에만 남깁니다.",
+        ),
       ],
     },
   ],

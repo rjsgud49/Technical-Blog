@@ -28,6 +28,7 @@ export const sidebarSections: NavSection[] = [
       { label: "탄생과 배경", href: fieldPath(F, "/history#origin"), difficulty: "basic" },
       { label: "주요 버전 흐름", href: fieldPath(F, "/history#versions"), difficulty: "basic" },
       { label: "현대 React의 방향", href: fieldPath(F, "/history#modern"), difficulty: "intermediate" },
+      { label: "컴파일러 시대", href: fieldPath(F, "/history#compiler-era"), difficulty: "intermediate" },
     ],
   },
   {
@@ -39,6 +40,9 @@ export const sidebarSections: NavSection[] = [
       { label: "렌더링 모델", href: fieldPath(F, "/structure#rendering"), difficulty: "intermediate" },
       { label: "Virtual DOM & Fiber", href: fieldPath(F, "/structure#fiber"), difficulty: "advanced" },
       { label: "상태와 데이터 흐름", href: fieldPath(F, "/structure#data-flow"), difficulty: "intermediate" },
+      { label: "Concurrent와 자동 배치", href: fieldPath(F, "/structure#concurrent"), difficulty: "advanced" },
+      { label: "React Compiler", href: fieldPath(F, "/structure#compiler"), difficulty: "advanced" },
+      { label: "이벤트 · 포털 · 에러 경계", href: fieldPath(F, "/structure#resilience"), difficulty: "intermediate" },
     ],
   },
   {
@@ -53,6 +57,9 @@ export const sidebarSections: NavSection[] = [
       { label: "useContext", href: fieldPath(F, "/hooks#use-context"), difficulty: "intermediate" },
       { label: "useReducer", href: fieldPath(F, "/hooks#use-reducer"), difficulty: "intermediate" },
       { label: "커스텀 훅", href: fieldPath(F, "/hooks#custom-hooks"), difficulty: "advanced" },
+      { label: "useTransition", href: fieldPath(F, "/hooks#use-transition"), difficulty: "advanced" },
+      { label: "useId", href: fieldPath(F, "/hooks#use-id"), difficulty: "basic" },
+      { label: "useSyncExternalStore", href: fieldPath(F, "/hooks#use-sync-external-store"), difficulty: "advanced" },
     ],
   },
   {
@@ -66,6 +73,8 @@ export const sidebarSections: NavSection[] = [
       { label: "Controlled / Uncontrolled", href: fieldPath(F, "/patterns#controlled"), difficulty: "basic" },
       { label: "State Colocation", href: fieldPath(F, "/patterns#colocation"), difficulty: "advanced" },
       { label: "Container / Presentational", href: fieldPath(F, "/patterns#container"), difficulty: "basic" },
+      { label: "합성 (Composition)", href: fieldPath(F, "/patterns#composition"), difficulty: "basic" },
+      { label: "Error Boundary", href: fieldPath(F, "/patterns#error-boundary"), difficulty: "intermediate" },
     ],
   },
   {

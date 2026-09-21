@@ -1,4 +1,4 @@
-import type { GlossaryTerm } from "@/types/lesson";
+﻿import type { GlossaryTerm } from "@/types/lesson";
 import { info, p, term, tip, ul, warn } from "@/lib/content/helpers";
 
 /**
@@ -615,6 +615,131 @@ export const glossaryTerms: GlossaryTerm[] = [
       p(
         "현대에는 커스텀 훅이 Container 역할을 대체하는 경우가 많습니다.",
       ),
+    ],
+  },
+  {
+    slug: "react-compiler",
+    term: "React Compiler",
+    aliases: ["컴파일러"],
+    summary:
+      "순수 컴포넌트를 분석해 불필요한 리렌더·값 재생성을 빌드 타임에 줄이려는 도구입니다.",
+    category: "structure",
+    difficulty: "advanced",
+    relatedSlugs: ["usememo", "pure-component", "render"],
+    relatedLessonIds: ["structure", "history"],
+    detail: [
+      p(
+        "Rules of React(순수 렌더, Hook 규칙)를 지켜야 자동 최적화가 안전합니다. 습관적인 useMemo 남용을 줄이는 방향입니다.",
+      ),
+    ],
+  },
+  {
+    slug: "error-boundary",
+    term: "Error Boundary",
+    aliases: ["에러 경계"],
+    summary:
+      "자식 트리의 렌더 에러를 잡아 폴백 UI를 보여주는 패턴입니다.",
+    category: "patterns",
+    difficulty: "intermediate",
+    relatedLessonIds: ["patterns/error-boundary"],
+    relatedSlugs: ["suspense"],
+    detail: [
+      warn(
+        "이벤트 핸들러와 비동기 에러는 잡지 못합니다. 영역마다 경계를 나누세요.",
+      ),
+    ],
+  },
+  {
+    slug: "portal",
+    term: "Portal",
+    aliases: ["포탈"],
+    summary:
+      "부모 DOM 밖(보통 document.body)에 UI를 그리면서 React 트리 관계는 유지하는 API입니다.",
+    category: "structure",
+    difficulty: "intermediate",
+    relatedLessonIds: ["structure"],
+    relatedSlugs: ["component"],
+    detail: [
+      p("모달·토스트처럼 overlay가 overflow/z-index에 막힐 때 사용합니다."),
+    ],
+  },
+  {
+    slug: "usetransition",
+    term: "useTransition",
+    summary:
+      "급하지 않은 상태 업데이트를 표시해, 급한 입력이 먼저 반영되게 하는 Hook입니다.",
+    category: "hooks",
+    difficulty: "advanced",
+    relatedLessonIds: ["hooks/use-transition"],
+    relatedSlugs: ["transition", "concurrent", "usedeferredvalue"],
+    detail: [
+      p("입력창 값은 일반 setState, 무거운 목록은 startTransition 안에 두세요."),
+    ],
+  },
+  {
+    slug: "usedeferredvalue",
+    term: "useDeferredValue",
+    summary:
+      "이미 있는 값을 한 박자 늦게 자식에게 전달해 급한 렌더를 보호하는 Hook입니다.",
+    category: "hooks",
+    difficulty: "advanced",
+    relatedLessonIds: ["hooks/use-transition"],
+    relatedSlugs: ["usetransition", "concurrent"],
+    detail: [
+      p("부모가 값을 이미 갖고 있고 자식만 무거울 때 적합합니다."),
+    ],
+  },
+  {
+    slug: "useid",
+    term: "useId",
+    summary:
+      "SSR과 클라이언트가 같은 고유 ID를 쓰게 만들어 label/aria 연결에 쓰는 Hook입니다.",
+    category: "hooks",
+    difficulty: "basic",
+    relatedLessonIds: ["hooks/use-id"],
+    relatedSlugs: ["accessibility"],
+    detail: [
+      warn("리스트 key로 쓰지 마세요. key는 데이터 정체성입니다."),
+    ],
+  },
+  {
+    slug: "usesyncexternalstore",
+    term: "useSyncExternalStore",
+    summary:
+      "React 바깥 저장소를 구독해 tearing 없이 스냅샷을 읽는 Hook입니다.",
+    category: "hooks",
+    difficulty: "advanced",
+    relatedLessonIds: ["hooks/use-sync-external-store"],
+    relatedSlugs: ["hooks", "concurrent"],
+    detail: [
+      p("Zustand/Redux 구현의 기반이기도 하고, window 이벤트 구독에도 씁니다."),
+    ],
+  },
+  {
+    slug: "accessibility",
+    term: "Accessibility",
+    aliases: ["a11y", "접근성"],
+    summary:
+      "키보드·스크린 리더·의미 있는 HTML로 누구나 쓰게 만드는 품질입니다.",
+    category: "structure",
+    difficulty: "basic",
+    relatedSlugs: ["useid"],
+    detail: [
+      p("label–input 연결, 버튼 역할, 모달 포커스 트랩이 기본입니다."),
+    ],
+  },
+  {
+    slug: "composition",
+    term: "Composition",
+    aliases: ["합성"],
+    summary:
+      "상속 대신 children과 슬롯으로 UI를 조립하는 React의 기본 확장 방법입니다.",
+    category: "patterns",
+    difficulty: "basic",
+    relatedLessonIds: ["patterns/composition"],
+    relatedSlugs: ["compound-components", "props"],
+    detail: [
+      tip("불리언 props가 늘어나면 합성을 먼저 검토하세요."),
     ],
   },
 ];

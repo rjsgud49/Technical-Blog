@@ -19,7 +19,7 @@ export const historyLesson: Lesson = {
     "Facebook에서의 탄생부터 Fiber, Hooks, Concurrent, RSC까지 — React가 왜 이렇게 진화했는지 흐름으로 이해합니다.",
   category: "history",
   difficulty: "basic",
-  readingTime: "14 min",
+  readingTime: "18 min",
   relatedTermSlugs: [
     "fiber",
     "hooks",
@@ -30,6 +30,7 @@ export const historyLesson: Lesson = {
     "nextjs",
     "virtual-dom",
     "jsx",
+    "react-compiler",
   ],
   sections: [
     {
@@ -241,6 +242,47 @@ function Search({ items }: { items: string[] }) {
         ),
         p(
           "정리하면 React의 역사는 세 번의 큰 전환으로 요약할 수 있습니다. (1) 선언적 UI와 Virtual DOM, (2) Fiber + Hooks로 엔진·DX 재설계, (3) Concurrent + RSC로 응답성과 서버 경계를 제품 확장. 이후 문서에서는 이 기반 위에서 구조·훅·패턴을 깊게 파고듭니다.",
+        ),
+      ],
+    },
+    {
+      id: "compiler-era",
+      title: "컴파일러 시대와 학습 지도",
+      difficulty: "intermediate",
+      blocks: [
+        p(
+          "React 19 전후 생태계의 화두는 “런타임 마법”보다 “빌드가 규칙을 강제한다”에 가깝습니다. ",
+          term("react-compiler", "React Compiler"),
+          "는 순수 컴포넌트를 분석해 불필요한 리렌더·재생성를 줄입니다. 예전처럼 ",
+          term("usememo", "useMemo"),
+          "를 습관적으로 뿌리는 대신, 규칙을 지키면 도구가 따라오게 만드는 전환입니다.",
+        ),
+        p(
+          "동시에 데이터 로딩은 컴포넌트 안의 ",
+          term("useeffect", "useEffect"),
+          "에서 프레임워크(",
+          term("nextjs", "Next.js"),
+          " App Router, RSC)와 서버로 이동하고 있습니다. 클라이언트 번들은 “상호작용이 있는 섬”만 남기는 쪽이 기본값이 됩니다.",
+        ),
+        ul(
+          [
+            "2013–15: 선언적 UI, 컴포넌트, Virtual DOM",
+          ],
+          [
+            "2017–19: Fiber, Hooks — 엔진과 작성 방식의 재설계",
+          ],
+          [
+            "2022–: Concurrent, Suspense, RSC — 응답성과 서버 경계",
+          ],
+          [
+            "2024–: Compiler — 수동 메모이제이션을 줄이는 빌드 타임 최적화",
+          ],
+        ),
+        p(
+          "이 사이트에서 역사를 본 다음의 추천 경로입니다. 구조에서 렌더/Fiber를 잡고, 훅으로 상태·동기화를 익히고, 패턴으로 조합 방법을 넓히세요. 배포·자동화는 React와 나란히 있는 CI/CD 분야에서 따로 쌓습니다.",
+        ),
+        tip(
+          "버전 숫자를 외우기보다 “우리 코드가 클래스인가 Hooks인가, Effect로 데이터를 불러오는가 RSC인가, memo를 손으로 쓰는가 컴파일러인가” 세 질문을 하세요. 지금 서 있는 시대가 바로 보입니다.",
         ),
       ],
     },

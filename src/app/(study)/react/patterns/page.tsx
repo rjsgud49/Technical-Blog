@@ -17,7 +17,7 @@ export default async function PatternsPage() {
       slug: "patterns",
       title: "패턴",
       description:
-        "Compound, HOC, State Colocation 등 자주 쓰는 React 구성 패턴을 한눈에 읽습니다.",
+        "합성, Error Boundary, Compound, HOC 등 자주 쓰는 React 구성 패턴을 한눈에 읽습니다.",
     },
     lessons,
   );

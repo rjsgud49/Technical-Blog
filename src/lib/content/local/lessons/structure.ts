@@ -16,10 +16,10 @@ export const structureLesson: Lesson = {
   slug: "structure",
   title: "React 구조 심화",
   description:
-    "컴포넌트와 JSX, 렌더·커밋, Fiber 재조정, 단방향 데이터 흐름까지 — React가 UI를 그리는 방식을 구조적으로 이해합니다.",
+    "컴포넌트와 JSX, 렌더·커밋, Fiber, Concurrent, 컴파일러, 에러 경계까지 — React가 UI를 그리는 방식을 구조적으로 이해합니다.",
   category: "structure",
   difficulty: "intermediate",
-  readingTime: "16 min",
+  readingTime: "28 min",
   relatedTermSlugs: [
     "component",
     "props",
@@ -33,6 +33,13 @@ export const structureLesson: Lesson = {
     "state",
     "unidirectional-data-flow",
     "pure-component",
+    "concurrent",
+    "batching",
+    "transition",
+    "react-compiler",
+    "rsc",
+    "error-boundary",
+    "portal",
   ],
   sections: [
     {
@@ -263,6 +270,192 @@ function Parent() {
         ),
         warn(
           "자식이 props를 직접 mutate하지 마세요. 변경이 필요하면 부모가 준 setter/콜백으로만 올리세요. 단방향 흐름이 깨지면 디버깅이 급격히 어려워집니다.",
+        ),
+      ],
+    },
+    {
+      id: "concurrent",
+      title: "Concurrent와 자동 배치",
+      difficulty: "advanced",
+      blocks: [
+        p(
+          term("concurrent", "Concurrent"),
+          "는 “멀티스레드 React”가 아닙니다. 메인 스레드에서 렌더 작업을 잘게 쪼개고, 급한 일(타이핑·클릭)이 오면 덜 급한 렌더를 양보하는 스케줄링 모델입니다. 커밋은 여전히 한 번에, 일관된 화면으로 반영됩니다.",
+        ),
+        p(
+          "React 18부터는 이벤트 핸들러뿐 아니라 타임아웃·Promise 콜백 안의 여러 ",
+          inlineCode("setState"),
+          "도 기본적으로 한 번의 리렌더로 묶입니다. 이것이 ",
+          term("batching", "자동 배치"),
+          "입니다. 예전처럼 “비동기 콜백이면 매번 렌더”가 아닙니다.",
+        ),
+        code(
+          `function Cart() {
+  const [count, setCount] = useState(0);
+  const [open, setOpen] = useState(false);
+
+  async function add() {
+    await saveToServer();
+    // React 18+: 두 setState가 한 렌더로 묶임
+    setCount((c) => c + 1);
+    setOpen(true);
+  }
+
+  return (
+    <button onClick={() => void add()}>
+      {count}개 {open ? "장바구니 열림" : ""}
+    </button>
+  );
+}`,
+          "tsx",
+          "자동 배치는 이벤트 밖에서도",
+        ),
+        p(
+          "급한 UI와 무거운 계산을 나누려면 ",
+          term("transition", "startTransition"),
+          " / ",
+          inlineCode("useTransition"),
+          "을 씁니다. 입력창 값은 즉시 반영하고, 필터 결과·탭 콘텐츠처럼 커도 되는 업데이트는 양보 가능하게 표시합니다. 사용자가 “먹통”을 덜 느끼게 하는 도구입니다.",
+        ),
+        ul(
+          [
+            "긴급: 입력 value, 포커스, 호버 — 일반 setState",
+          ],
+          [
+            "급하지 않음: 검색 결과, 차트, 큰 목록 — Transition",
+          ],
+          [
+            inlineCode("useDeferredValue"),
+            ": 이미 있는 값을 “늦게 따라오게” 만들 때",
+          ],
+        ),
+        info(
+          "렌더는 중단될 수 있어도 커밋은 원자적입니다. 화면에 반만 바뀐 트리가 보이지 않도록 설계되어 있습니다.",
+        ),
+        warn(
+          "Transition 안에서도 사용자 입력 상태를 넣으면 안 됩니다. 입력은 긴급 업데이트로 두고, 그 결과로 파생되는 무거운 일만 Transition으로 보내세요.",
+        ),
+      ],
+    },
+    {
+      id: "compiler",
+      title: "React Compiler와 메모이제이션",
+      difficulty: "advanced",
+      blocks: [
+        p(
+          term("react-compiler", "React Compiler"),
+          "는 컴포넌트를 분석해 리렌더와 값 재계산을 자동으로 줄이려는 빌드 타임 도구입니다. 수동 ",
+          term("usememo", "useMemo"),
+          " / ",
+          term("usecallback", "useCallback"),
+          " / ",
+          inlineCode("memo()"),
+          "를 “습관적으로” 뿌리지 않아도 되게 만드는 방향입니다.",
+        ),
+        p(
+          "컴파일러가 잘 동작하려면 컴포넌트가 ",
+          term("pure-component", "순수"),
+          "해야 합니다. 렌더 중 외부 변수를 바꾸고, 조건부로 Hook을 호출하고, 배열을 매 렌더 mutate하면 분석이 깨지거나 최적화가 빠집니다. Rules of React가 성능 규칙이기도 한 이유입니다.",
+        ),
+        code(
+          `// 컴파일러(또는 사람)가 안전하게 캐시하려면
+function Price({ items }: { items: { price: number }[] }) {
+  // ✅ 같은 items면 같은 합계 — 순수 계산
+  const total = items.reduce((sum, item) => sum + item.price, 0);
+  return <p>{total}원</p>;
+}
+
+// ❌ 렌더 중 모듈 변수/props를 직접 수정하면 캐시 불가
+let leak = 0;
+function Bad() {
+  leak += 1;
+  return <span>{leak}</span>;
+}`,
+          "tsx",
+          "순수해야 자동 메모가 가능하다",
+        ),
+        ul(
+          [
+            "아직 컴파일러가 없는 코드베이스: 측정된 병목에만 memo를 넣는다",
+          ],
+          [
+            "참조 동일성이 계약인 API(의존성 배열, React.memo 자식)에서만 useCallback을 쓴다",
+          ],
+          [
+            "추측성 최적화는 가독성을 해치고, 잘못된 deps는 더 느려질 수 있다",
+          ],
+        ),
+        tip(
+          "성능은 React DevTools Profiler로 “어떤 컴포넌트가 왜 리렌더됐는지”를 본 뒤에 손대세요. Fiber 구조를 이해하면 Profiler 타임라인이 훨씬 잘 읽힙니다.",
+        ),
+        info(
+          term("rsc", "Server Components"),
+          "는 컴파일러와 다른 축입니다. 서버에서 실행되어 번들에서 빠지고, 클라이언트 경계를 ",
+          inlineCode("'use client'"),
+          "로 명시합니다. SSR(HTML 미리 그리기)과 실행 위치 분리(RSC)를 섞지 마세요.",
+        ),
+      ],
+    },
+    {
+      id: "resilience",
+      title: "이벤트 · 포털 · 에러 경계",
+      difficulty: "intermediate",
+      blocks: [
+        p(
+          "React 이벤트는 브라우저 이벤트를 감싼 합성 이벤트입니다. 위임으로 루트에 붙고, ",
+          inlineCode("onClick"),
+          "처럼 camelCase입니다. ",
+          inlineCode("preventDefault()"),
+          "는 쓰지만, 대부분의 경우 ",
+          inlineCode("return false"),
+          "에 의존하지 않습니다.",
+        ),
+        p(
+          term("portal", "Portal"),
+          "은 부모 DOM 밖(보통 ",
+          inlineCode("document.body"),
+          ")에 모달·토스트·툴팁을 그립니다. 시각적 위치는 바깥이지만, React 트리상 부모-자식 관계(Context, 이벤트 버블의 React 경로)는 유지됩니다. z-index와 overflow: hidden을 뚫을 때 필수입니다.",
+        ),
+        code(
+          `import { createPortal } from "react-dom";
+
+function Modal({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+  return createPortal(
+    <div className="overlay" onClick={onClose} role="dialog">
+      <div className="dialog" onClick={(e) => e.stopPropagation()}>
+        {children}
+      </div>
+    </div>,
+    document.body,
+  );
+}`,
+          "tsx",
+          "Portal로 모달을 body에 붙이기",
+        ),
+        p(
+          term("error-boundary", "Error Boundary"),
+          "는 자식 트리의 렌더 에러를 잡아 폴백 UI를 보여 줍니다. 이벤트 핸들러·비동기·서버 에러는 잡지 못합니다. 클래스의 ",
+          inlineCode("getDerivedStateFromError"),
+          " / ",
+          inlineCode("componentDidCatch"),
+          "로 구현하며, 앱 전체 한 개가 아니라 위젯 단위로 여러 개를 두는 편이 안전합니다.",
+        ),
+        ul(
+          [
+            "잡힘: 렌더, 생명주기, 자식 트리의 Hook 렌더 예외",
+          ],
+          [
+            "안 잡힘: click 핸들러, setTimeout, fetch 실패, 서버 컴포넌트 예외(프레임워크 경계 필요)",
+          ],
+          [
+            "실무: 라우트/위젯마다 경계를 두고, 로깅 서비스로 componentDidCatch를 연결",
+          ],
+        ),
+        warn(
+          "에러 경계가 없다고 예외가 조용히 사라지지 않습니다. 루트까지 올라가면 흰 화면이 됩니다. 중요한 목록·편집기·결제 UI는 각각 감싸 두세요.",
+        ),
+        tip(
+          "개발 Strict Mode는 렌더와 Effect를 두 번 돌려 순수성·클린업을 검사합니다. “두 번 fetch 된다”고 Effect를 지우기보다, 클린업과 abort 또는 프레임워크 데이터 로딩을 먼저 검토하세요.",
         ),
       ],
     },

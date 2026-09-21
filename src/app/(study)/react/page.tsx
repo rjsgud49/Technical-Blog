@@ -29,13 +29,13 @@ export default function HomePage() {
           {
             href: fieldPath(DEFAULT_FIELD, "/structure"),
             title: "React 구조",
-            desc: "렌더링 · Fiber · 데이터 흐름",
+            desc: "렌더링 · Fiber · Concurrent · Compiler",
             level: "intermediate" as const,
           },
           {
             href: fieldPath(DEFAULT_FIELD, "/hooks"),
             title: "Hooks",
-            desc: "기본 훅부터 커스텀 훅까지",
+            desc: "기본 훅부터 Concurrent 훅까지",
             level: "basic" as const,
           },
           {
