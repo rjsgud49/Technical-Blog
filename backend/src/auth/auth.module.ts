@@ -6,6 +6,7 @@ import { UsersModule } from '../users/users.module';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
+import { requireJwtSecret } from './auth-secrets';
 
 @Module({
   imports: [
@@ -17,7 +18,7 @@ import { JwtStrategy } from './jwt.strategy';
       useFactory: (config: ConfigService) => {
         const expiresIn = config.get<string>('JWT_EXPIRES_IN', '7d');
         return {
-          secret: config.get<string>('JWT_SECRET', 'dev-secret'),
+          secret: requireJwtSecret(config),
           signOptions: {
             expiresIn: expiresIn as unknown as number,
           },

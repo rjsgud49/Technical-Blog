@@ -12,6 +12,6 @@ start "RS-WEB" cmd /k "cd /d ""%~dp0"" && npm run dev"
 echo.
 echo API  http://localhost:4000/api/health
 echo WEB  http://localhost:3000
-echo LOGIN  rjsgud / rjsgud123
+echo LOGIN  backend/.env 의 SEED_ADMIN_* (소스에 비밀번호 없음)
 echo.
 pause

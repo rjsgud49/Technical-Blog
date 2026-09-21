@@ -22,9 +22,10 @@ set "DB_PASSWORD=password"
 set "DB_NAME=react_structure"
 set "API_PORT=4000"
 set "WEB_PORT=3000"
-set "JWT_SECRET=dev-change-me-react-structure"
-set "ADMIN_USER=rjsgud"
-set "ADMIN_PASS=rjsgud123"
+REM JWT/관리자 비밀번호는 소스에 하드코딩하지 않음 — 최초 생성 시 입력·랜덤
+set "JWT_SECRET="
+set "ADMIN_USER="
+set "ADMIN_PASS="
 
 echo.
 echo ============================================================
@@ -187,10 +188,25 @@ REM ============================================================
 :ENV
 echo [5/7] .env 파일 생성...
 
-REM backend\.env
+REM backend\.env — 비밀번호/JWT 는 대화형 입력 (깃에 올리지 말 것)
 if exist "%BACKEND%\.env" (
   echo   backend\.env 이미 있음 → 유지
 ) else (
+  echo.
+  echo   [보안] 관리자 이메일·비밀번호·JWT 를 입력합니다. backend\.env 에만 저장됩니다.
+  set /p ADMIN_USER=관리자 이메일: 
+  set /p ADMIN_PASS=관리자 비밀번호 (8자 이상): 
+  for /f %%i in ('node -e "process.stdout.write(require('crypto').randomBytes(32).toString('hex'))"') do set "JWT_SECRET=%%i"
+  if "!ADMIN_USER!"=="" (
+    echo   [X] 관리자 이메일이 비어 있습니다.
+    set "ERR=1"
+    goto :SUMMARY
+  )
+  if "!ADMIN_PASS!"=="" (
+    echo   [X] 관리자 비밀번호가 비어 있습니다.
+    set "ERR=1"
+    goto :SUMMARY
+  )
   (
     echo PORT=%API_PORT%
     echo CORS_ORIGIN=http://localhost:%WEB_PORT%
@@ -202,12 +218,12 @@ if exist "%BACKEND%\.env" (
     echo DB_NAME=%DB_NAME%
     echo DB_SYNC=true
     echo.
-    echo JWT_SECRET=%JWT_SECRET%
+    echo JWT_SECRET=!JWT_SECRET!
     echo JWT_EXPIRES_IN=7d
     echo.
-    echo SEED_ADMIN_USERNAME=%ADMIN_USER%
-    echo SEED_ADMIN_PASSWORD=%ADMIN_PASS%
-    echo SEED_ADMIN_DISPLAY_NAME=%ADMIN_USER%
+    echo SEED_ADMIN_USERNAME=!ADMIN_USER!
+    echo SEED_ADMIN_PASSWORD=!ADMIN_PASS!
+    echo SEED_ADMIN_DISPLAY_NAME=rjsgud
   ) > "%BACKEND%\.env"
   echo   OK backend\.env 생성
 )

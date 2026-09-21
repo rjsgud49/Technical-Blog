@@ -27,7 +27,7 @@ Health: `GET http://localhost:4000/api/health`
 | Services | `GET/POST /api/services`, `DELETE /api/services/:id` |
 | Field homes | `GET/PUT /api/field-homes/:fieldSlug` |
 
-기본 관리자: `rjsgud` / `rjsgud123` (시드)
+관리자 계정은 `backend/.env`의 `SEED_ADMIN_USERNAME` / `SEED_ADMIN_PASSWORD`로만 시드됩니다. 소스에 비밀번호를 두지 마세요.
 
 ## 스키마 메모
 

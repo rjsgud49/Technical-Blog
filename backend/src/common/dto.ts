@@ -1,6 +1,7 @@
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import {
   IsBoolean,
+  IsEmail,
   IsIn,
   IsInt,
   IsOptional,
@@ -10,12 +11,15 @@ import {
 } from 'class-validator';
 
 export class LoginDto {
-  @IsString()
-  @MinLength(1)
+  /** 로그인 아이디 = 이메일 (서버에서만 검증) */
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().toLowerCase() : value,
+  )
+  @IsEmail()
   username: string;
 
   @IsString()
-  @MinLength(1)
+  @MinLength(8)
   password: string;
 }
 

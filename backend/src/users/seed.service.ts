@@ -46,6 +46,8 @@ const BUILTIN_CATEGORIES = [
   },
 ];
 
+const BCRYPT_ROUNDS = 12;
+
 @Injectable()
 export class SeedService {
   constructor(
@@ -88,7 +90,6 @@ export class SeedService {
     }
   }
 
-  /** 프론트에서 제거한 skills 내장 카테고리 정리 */
   private async removeLegacySkills() {
     const skills = await this.categories.findOne({
       where: { slug: 'skills', builtin: true },
@@ -138,20 +139,49 @@ export class SeedService {
     );
   }
 
+  /**
+   * 관리자 계정은 환경변수에서만 읽음 — 소스에 비밀번호 기본값 없음.
+   * SEED_ADMIN_USERNAME / SEED_ADMIN_PASSWORD 필수.
+   */
   private async seedAdmin() {
-    const username = this.config.get<string>('SEED_ADMIN_USERNAME', 'rjsgud');
-    const exists = await this.users.findOne({ where: { username } });
-    if (exists) return;
+    const username = this.config
+      .get<string>('SEED_ADMIN_USERNAME')
+      ?.trim()
+      .toLowerCase();
+    const password = this.config.get<string>('SEED_ADMIN_PASSWORD');
+    if (!username || !password) {
+      throw new Error(
+        'SEED_ADMIN_USERNAME and SEED_ADMIN_PASSWORD must be set in backend/.env (do not commit secrets).',
+      );
+    }
+    if (password.length < 8) {
+      throw new Error('SEED_ADMIN_PASSWORD must be at least 8 characters.');
+    }
 
-    const password = this.config.get<string>(
-      'SEED_ADMIN_PASSWORD',
-      'rjsgud123',
-    );
-    const displayName = this.config.get<string>(
-      'SEED_ADMIN_DISPLAY_NAME',
-      'rjsgud',
-    );
-    const passwordHash = await bcrypt.hash(password, 10);
+    const displayName =
+      this.config.get<string>('SEED_ADMIN_DISPLAY_NAME')?.trim() || username;
+    const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+
+    const byEmail = await this.users.findOne({ where: { username } });
+    if (byEmail) {
+      byEmail.passwordHash = passwordHash;
+      byEmail.displayName = displayName;
+      byEmail.role = 'admin';
+      await this.users.save(byEmail);
+      return;
+    }
+
+    // 구 데모 계정(rjsgud) → 이메일 계정으로 이전
+    const legacy = await this.users.findOne({ where: { username: 'rjsgud' } });
+    if (legacy) {
+      legacy.username = username;
+      legacy.passwordHash = passwordHash;
+      legacy.displayName = displayName;
+      legacy.role = 'admin';
+      await this.users.save(legacy);
+      return;
+    }
+
     await this.users.save(
       this.users.create({
         username,
