@@ -3,11 +3,13 @@
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Blockquote from "@tiptap/extension-blockquote";
+import Image from "@tiptap/extension-image";
 import Placeholder from "@tiptap/extension-placeholder";
 import Underline from "@tiptap/extension-underline";
 import Link from "@tiptap/extension-link";
 import { useEffect, useRef, useState } from "react";
 import { plainTextToHtml } from "@/lib/admin/html-body";
+import { fileToArticleSrc } from "@/lib/admin/article-image";
 import {
   Callout,
   type CalloutVariant,
@@ -36,16 +38,25 @@ function toEditorHtml(value: string) {
   return html.trim() ? html : "<p></p>";
 }
 
+function collectImageFiles(list: FileList | File[] | null | undefined) {
+  return Array.from(list ?? []).filter((f) => f.type.startsWith("image/"));
+}
+
 export function WysiwygEditor({
   value,
   onChange,
-  placeholder = "본문을 작성하세요… 툴바로 제목·코드·색상 박스를 넣으면 여기서 바로 보입니다.",
+  placeholder = "본문을 작성하세요… 툴바로 제목·코드·색상 박스·사진을 넣으면 여기서 바로 보입니다.",
   className = "",
   minHeightClass = "min-h-72",
 }: WysiwygEditorProps) {
   /** 에디터가 방금 내보낸 HTML — 외부 value와 같으면 setContent 하지 않음 */
   const lastEmittedRef = useRef<string | null>(null);
-  /** 선택/트랜잭션 시 툴바 active 갱신 */
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const insertImagesRef = useRef<(files: File[]) => Promise<void>>(
+    async () => undefined,
+  );
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [, setEditorTick] = useState(0);
 
   const editor = useEditor({
@@ -66,12 +77,31 @@ export function WysiwygEditor({
         HTMLAttributes: { class: "text-primary-600 underline" },
       }),
       Callout,
+      Image.configure({
+        inline: false,
+        allowBase64: true,
+        HTMLAttributes: { class: "article-image" },
+      }),
       Placeholder.configure({ placeholder }),
     ],
     content: toEditorHtml(value),
     editorProps: {
       attributes: {
         class: `prose-editor prose-content outline-none px-4 py-4 ${minHeightClass}`,
+      },
+      handlePaste(_view, event) {
+        const files = collectImageFiles(event.clipboardData?.files);
+        if (!files.length) return false;
+        event.preventDefault();
+        void insertImagesRef.current(files);
+        return true;
+      },
+      handleDrop(_view, event) {
+        const files = collectImageFiles(event.dataTransfer?.files);
+        if (!files.length) return false;
+        event.preventDefault();
+        void insertImagesRef.current(files);
+        return true;
       },
     },
     onCreate: ({ editor: ed }) => {
@@ -83,6 +113,23 @@ export function WysiwygEditor({
       onChange(html);
     },
   });
+
+  insertImagesRef.current = async (files: File[]) => {
+    if (!editor || !files.length) return;
+    setUploading(true);
+    setUploadError(null);
+    try {
+      for (const file of files) {
+        const src = await fileToArticleSrc(file);
+        const alt = file.name.replace(/\.[^.]+$/, "");
+        editor.chain().focus().setImage({ src, alt }).run();
+      }
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "업로드 실패");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   useEffect(() => {
     if (!editor) return;
@@ -304,10 +351,32 @@ export function WysiwygEditor({
           }}
         />
         <ToolbarBtn
+          label={uploading ? "올리는 중…" : "사진"}
+          active={editor.isActive("image")}
+          onClick={() => fileInputRef.current?.click()}
+        />
+        <ToolbarBtn
           label="⸻"
           onClick={() => editor.chain().focus().setHorizontalRule().run()}
         />
       </div>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp,image/gif"
+        multiple
+        hidden
+        onChange={(e) => {
+          const files = collectImageFiles(e.target.files);
+          e.target.value = "";
+          if (files.length) void insertImagesRef.current(files);
+        }}
+      />
+      {uploadError && (
+        <p className="border-b border-error-100 bg-error-50 px-3 py-1.5 text-xs text-error-600">
+          {uploadError}
+        </p>
+      )}
       <EditorContent editor={editor} />
     </div>
   );

@@ -369,6 +369,16 @@ pre.code-fence[data-lang-label]::before {
   text-underline-offset: 2px;
 }
 
+.prose-editor img,
+.prose-content img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 1em 0;
+  border-radius: 8px;
+  background: var(--color-neutral-100);
+}
+
 /* 색상 박스 (callout) */
 .prose-editor .callout,
 .prose-content .callout {
