@@ -11,7 +11,6 @@ import { categoryPublicHref } from "@/lib/admin/post-mapper";
 import {
   DEFAULT_FIELD,
   fieldFromPathname,
-  fieldPath,
 } from "@/lib/field-path";
 
 type NavItem = { label: string; href: string };
@@ -23,29 +22,30 @@ export function Header() {
   const field = fieldFromPathname(pathname);
 
   const nav = useMemo(() => {
-    const custom: NavItem[] = categories
-      .filter(
-        (c) =>
-          !c.builtin &&
-          (c.fieldSlug || DEFAULT_FIELD) === field &&
-          Boolean(c.navLabel?.trim()),
-      )
+    const seedBySlug = new Map(
+      topNav.map((item) => {
+        const slug = item.href.split("/").filter(Boolean).pop() ?? "";
+        return [slug, item] as const;
+      }),
+    );
+
+    return [...categories]
+      .filter((c) => (c.fieldSlug || DEFAULT_FIELD) === field)
       .sort((a, b) => a.order - b.order)
-      .map((c) => ({
-        label: c.navLabel!.trim(),
-        href: categoryPublicHref(c.slug, field),
-      }));
-
-    if (field !== DEFAULT_FIELD) {
-      return custom;
-    }
-
-    const glossaryHref = fieldPath(DEFAULT_FIELD, "/glossary");
-    const seedMain = topNav.filter((item) => item.href !== glossaryHref);
-    const glossary = topNav.find((item) => item.href === glossaryHref);
-    const items: NavItem[] = [...seedMain, ...custom];
-    if (glossary) items.push(glossary);
-    return items;
+      .flatMap((c) => {
+        const seed = field === DEFAULT_FIELD ? seedBySlug.get(c.slug) : undefined;
+        if (seed) {
+          return [{ label: seed.label, href: seed.href }];
+        }
+        const navLabel = c.navLabel?.trim();
+        if (!navLabel) return [];
+        return [
+          {
+            label: navLabel,
+            href: categoryPublicHref(c.slug, field),
+          },
+        ];
+      });
   }, [categories, field]);
 
   return (

@@ -29,6 +29,7 @@ interface AdminContentContextValue {
   createPost: (input: CreatePostInput, authorId: string) => Promise<ManagedPost>;
   updatePost: (id: string, input: UpdatePostInput) => Promise<ManagedPost>;
   reorderPosts: (orderedIds: string[]) => Promise<void>;
+  reorderCategories: (orderedIds: string[]) => Promise<void>;
   deletePost: (id: string) => Promise<void>;
 }
 
@@ -104,6 +105,10 @@ export function AdminContentProvider({
       },
       reorderPosts: async (orderedIds) => {
         await repo.reorderPosts(orderedIds);
+        await refresh();
+      },
+      reorderCategories: async (orderedIds) => {
+        await repo.reorderCategories(orderedIds);
         await refresh();
       },
       deletePost: async (id) => {

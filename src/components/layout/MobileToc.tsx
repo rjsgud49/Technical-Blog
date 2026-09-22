@@ -5,13 +5,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { DifficultyBadge } from "@/components/ui/DifficultyBadge";
 import { useAdminContent } from "@/components/admin/AdminContentProvider";
-import { sidebarSections } from "@/data/navigation";
 import {
   DEFAULT_FIELD,
   fieldFromPathname,
 } from "@/lib/field-path";
-import { categoryPublicHref } from "@/lib/admin/post-mapper";
 import { mergeSectionNavItems } from "@/lib/admin/sidebar-nav";
+import { buildFieldNavSections } from "@/lib/admin/field-nav";
 
 export function MobileToc() {
   const [open, setOpen] = useState(false);
@@ -27,38 +26,16 @@ export function MobileToc() {
       )
       .sort((a, b) => a.order - b.order);
 
-    const builtin =
-      field === DEFAULT_FIELD
-        ? sidebarSections.map((section) => ({
-            id: section.id,
-            label: section.label,
-            href: section.href,
-            items: mergeSectionNavItems(
-              section.id,
-              section.items ?? [],
-              published,
-            ),
-          }))
-        : [];
-
-    const custom = categories
-      .filter(
-        (c) =>
-          !c.builtin && (c.fieldSlug || DEFAULT_FIELD) === field,
-      )
-      .sort((a, b) => a.order - b.order)
-      .map((cat) => ({
-        id: cat.slug,
-        label: cat.label,
-        href: categoryPublicHref(cat.slug, field),
-        items: mergeSectionNavItems(
-          cat.slug,
-          [],
-          published.filter((p) => p.categorySlug === cat.slug),
-        ),
-      }));
-
-    return [...builtin, ...custom];
+    return buildFieldNavSections(field, categories).map((section) => ({
+      id: section.slug,
+      label: section.label,
+      href: section.href,
+      items: mergeSectionNavItems(
+        section.slug,
+        section.seedItems,
+        published,
+      ),
+    }));
   }, [categories, posts, field]);
 
   return (

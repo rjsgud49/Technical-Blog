@@ -100,5 +100,7 @@ export interface ContentAdminRepository {
   updatePost(id: string, input: UpdatePostInput): Promise<ManagedPost>;
   /** 같은 카테고리 글들의 표시 순서를 orderedIds 순으로 저장 */
   reorderPosts(orderedIds: string[]): Promise<void>;
+  /** 같은 분야 카테고리 표시 순서를 orderedIds 순으로 저장 */
+  reorderCategories(orderedIds: string[]): Promise<void>;
   deletePost(id: string): Promise<void>;
 }

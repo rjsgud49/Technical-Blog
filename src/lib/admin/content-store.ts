@@ -381,6 +381,26 @@ export const localContentAdminRepository: ContentAdminRepository = {
     writeStore(store);
   },
 
+  async reorderCategories(orderedIds) {
+    const store = readStore();
+    const idSet = new Set(orderedIds);
+    orderedIds.forEach((id, index) => {
+      const cat = store.categories.find((c) => c.id === id);
+      if (cat) {
+        cat.order = index;
+        cat.updatedAt = now();
+      }
+    });
+    for (const cat of store.categories) {
+      if (idSet.has(cat.id)) continue;
+      const sibling = store.categories.find((c) => idSet.has(c.id));
+      if (sibling && cat.fieldSlug === sibling.fieldSlug) {
+        cat.order = orderedIds.length + (cat.order ?? 0);
+      }
+    }
+    writeStore(store);
+  },
+
   async deletePost(id) {
     const store = readStore();
     if (!store.posts.some((p) => p.id === id)) {

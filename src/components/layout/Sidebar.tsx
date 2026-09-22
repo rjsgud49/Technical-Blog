@@ -13,10 +13,12 @@ import { usePathname } from "next/navigation";
 import { DifficultyBadge } from "@/components/ui/DifficultyBadge";
 import { useAdminContent } from "@/components/admin/AdminContentProvider";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { sidebarSections } from "@/data/navigation";
-import { categoryPublicHref } from "@/lib/admin/post-mapper";
 import { setSidebarOrder } from "@/lib/admin/sidebar-order";
 import { mergeSectionNavItems } from "@/lib/admin/sidebar-nav";
+import {
+  buildFieldNavSections,
+  type FieldNavSection,
+} from "@/lib/admin/field-nav";
 import { useFieldHome } from "@/lib/admin/use-field-home";
 import {
   DEFAULT_FIELD,
@@ -24,6 +26,7 @@ import {
   fieldHome,
 } from "@/lib/field-path";
 import type { Difficulty } from "@/types/content";
+import type { ManagedPost } from "@/types/admin";
 import { slugify } from "@/lib/slugify";
 
 type NavItem = {
@@ -38,7 +41,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const field = fieldFromPathname(pathname);
   const { session } = useAuth();
-  const { categories, posts, createCategory, reorderPosts, deletePost } =
+  const { categories, posts, createCategory, reorderPosts, reorderCategories, deletePost } =
     useAdminContent();
   const canEdit = Boolean(session);
   const [orderTick, setOrderTick] = useState(0);
@@ -51,15 +54,9 @@ export function Sidebar() {
       window.removeEventListener("rs-sidebar-order-changed", onChange);
   }, []);
 
-  const customCategories = useMemo(
-    () =>
-      [...categories]
-        .filter(
-          (c) =>
-            !c.builtin && (c.fieldSlug || DEFAULT_FIELD) === field,
-        )
-        .sort((a, b) => a.order - b.order),
-    [categories, field],
+  const navSections = useMemo(
+    () => buildFieldNavSections(field, categories),
+    [field, categories],
   );
   const publishedPosts = useMemo(
     () =>
@@ -71,7 +68,6 @@ export function Sidebar() {
         .sort((a, b) => a.order - b.order),
     [posts, field],
   );
-  const showSeedNav = field === DEFAULT_FIELD;
 
   const persistSectionOrder = useCallback(
     async (sectionId: string, items: NavItem[]) => {
@@ -88,6 +84,18 @@ export function Sidebar() {
       setOrderTick((n) => n + 1);
     },
     [reorderPosts],
+  );
+
+  const persistCategoryOrder = useCallback(
+    async (sections: FieldNavSection[]) => {
+      const ids = sections
+        .map((s) => s.categoryId)
+        .filter((id): id is string => Boolean(id));
+      if (ids.length > 0) {
+        await reorderCategories(ids);
+      }
+    },
+    [reorderCategories],
   );
 
   const onDeletePost = useCallback(
@@ -130,92 +138,26 @@ export function Sidebar() {
           </div>
           {canEdit && (
             <p className="mt-3 text-[11px] text-neutral-400">
-              글을 드래그해 순서를 바꿀 수 있습니다
+              카테고리와 글을 드래그해 순서를 바꿀 수 있습니다
             </p>
           )}
         </div>
 
         <nav aria-label="목차" className="space-y-6">
-          {showSeedNav &&
-            sidebarSections.map((section) => {
-              const sectionActive =
-                pathname === section.href ||
-                pathname.startsWith(`${section.href}/`);
-
-              const items = mergeSectionNavItems(
-                section.id,
-                section.items ?? [],
-                publishedPosts,
-              );
-              // orderTick forces re-read of localStorage order
-              void orderTick;
-
-              return (
-                <div key={section.id}>
-                  <Link
-                    href={section.href}
-                    className={`mb-2 block text-sm font-semibold transition-colors duration-150 ${
-                      sectionActive
-                        ? "text-primary-700"
-                        : "text-neutral-800 hover:text-primary-600"
-                    }`}
-                  >
-                    {section.label}
-                  </Link>
-                  {items.length > 0 && (
-                    <SortableItemList
-                      items={items}
-                      pathname={pathname}
-                      canDrag={canEdit}
-                      onReorder={(next) =>
-                        void persistSectionOrder(section.id, next)
-                      }
-                      onDeletePost={canEdit ? onDeletePost : undefined}
-                    />
-                  )}
-                </div>
-              );
-            })}
-
-          {customCategories.map((cat) => {
-            const href = categoryPublicHref(cat.slug, field);
-            const active =
-              pathname === href || pathname.startsWith(`${href}/`);
-            const catPosts: NavItem[] = mergeSectionNavItems(
-              cat.slug,
-              [],
-              publishedPosts.filter((p) => p.categorySlug === cat.slug),
-            );
-            void orderTick;
-
-            return (
-              <div key={cat.id}>
-                <Link
-                  href={href}
-                  className={`mb-2 block text-sm font-semibold transition-colors duration-150 ${
-                    active
-                      ? "text-primary-700"
-                      : "text-neutral-800 hover:text-primary-600"
-                  }`}
-                >
-                  {cat.label}
-                </Link>
-                {catPosts.length > 0 && (
-                  <SortableItemList
-                    items={catPosts}
-                    pathname={pathname}
-                    canDrag={canEdit}
-                    onReorder={(next) =>
-                      void persistSectionOrder(cat.slug, next)
-                    }
-                    onDeletePost={canEdit ? onDeletePost : undefined}
-                  />
-                )}
-              </div>
-            );
-          })}
-
-          {!showSeedNav && customCategories.length === 0 && (
+          {navSections.length > 0 ? (
+            <SortableSectionList
+              sections={navSections}
+              pathname={pathname}
+              canDrag={canEdit}
+              publishedPosts={publishedPosts}
+              onReorderSections={(next) => void persistCategoryOrder(next)}
+              onReorderPosts={(slug, next) =>
+                void persistSectionOrder(slug, next)
+              }
+              onDeletePost={canEdit ? onDeletePost : undefined}
+              orderTick={orderTick}
+            />
+          ) : (
             <p className="text-sm text-neutral-400">
               {canEdit
                 ? "「+ 카테고리」로 목차를 추가하세요."
@@ -355,6 +297,137 @@ function CategoryQuickAdd({
   );
 }
 
+}
+
+function SortableSectionList({
+  sections,
+  pathname,
+  canDrag,
+  publishedPosts,
+  onReorderSections,
+  onReorderPosts,
+  onDeletePost,
+  orderTick,
+}: {
+  sections: FieldNavSection[];
+  pathname: string;
+  canDrag: boolean;
+  publishedPosts: ManagedPost[];
+  onReorderSections: (next: FieldNavSection[]) => void;
+  onReorderPosts: (slug: string, next: NavItem[]) => void;
+  onDeletePost?: (postId: string, title: string) => void;
+  orderTick: number;
+}) {
+  const [dragLocal, setDragLocal] = useState<FieldNavSection[] | null>(null);
+  const [dragKey, setDragKey] = useState<string | null>(null);
+  const display = dragLocal ?? sections;
+
+  function onDragStart(e: DragEvent, key: string) {
+    if (!canDrag) return;
+    setDragLocal(sections);
+    setDragKey(key);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", `section:${key}`);
+  }
+
+  function onDragOver(e: DragEvent, overKey: string) {
+    if (!canDrag || !dragKey || dragKey === overKey) return;
+    e.preventDefault();
+    setDragLocal((prev) => {
+      const list = prev ?? sections;
+      const from = list.findIndex((i) => i.key === dragKey);
+      const to = list.findIndex((i) => i.key === overKey);
+      if (from < 0 || to < 0 || from === to) return list;
+      const next = [...list];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+  }
+
+  function onDragEnd() {
+    if (!canDrag || !dragKey) {
+      setDragKey(null);
+      setDragLocal(null);
+      return;
+    }
+    const next = dragLocal ?? sections;
+    const same =
+      next.length === sections.length &&
+      next.every((item, i) => item.key === sections[i]?.key);
+    if (!same) onReorderSections(next);
+    setDragKey(null);
+    setDragLocal(null);
+  }
+
+  void orderTick;
+
+  return (
+    <>
+      {display.map((section) => {
+        const sectionActive =
+          pathname === section.href ||
+          pathname.startsWith(`${section.href}/`);
+        const items = mergeSectionNavItems(
+          section.slug,
+          section.seedItems,
+          publishedPosts,
+        );
+        const draggable = canDrag && Boolean(section.categoryId);
+
+        return (
+          <div
+            key={section.key}
+            onDragOver={(e) => {
+              if (dragKey) onDragOver(e, section.key);
+            }}
+            className={dragKey === section.key ? "opacity-50" : undefined}
+          >
+            <div
+              draggable={draggable}
+              onDragStart={(e) => onDragStart(e, section.key)}
+              onDragEnd={onDragEnd}
+              className="mb-2 flex min-w-0 items-center gap-1"
+            >
+              {draggable && (
+                <span
+                  className="shrink-0 cursor-grab text-[10px] text-neutral-300 hover:text-neutral-400 active:cursor-grabbing"
+                  aria-hidden
+                  title="카테고리 순서 변경"
+                >
+                  ⠿
+                </span>
+              )}
+              <Link
+                href={section.href}
+                className={`min-w-0 flex-1 truncate text-sm font-semibold transition-colors duration-150 ${
+                  sectionActive
+                    ? "text-primary-700"
+                    : "text-neutral-800 hover:text-primary-600"
+                } ${draggable ? "cursor-grab active:cursor-grabbing" : ""}`}
+                onClick={(e) => {
+                  if (dragKey) e.preventDefault();
+                }}
+              >
+                {section.label}
+              </Link>
+            </div>
+            {items.length > 0 && (
+              <SortableItemList
+                items={items}
+                pathname={pathname}
+                canDrag={canDrag}
+                onReorder={(next) => onReorderPosts(section.slug, next)}
+                onDeletePost={onDeletePost}
+              />
+            )}
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
 function SortableItemList({
   items,
   pathname,
@@ -374,6 +447,7 @@ function SortableItemList({
 
   function onDragStart(e: DragEvent, key: string) {
     if (!canDrag) return;
+    e.stopPropagation();
     setDragLocal(items);
     setDragKey(key);
     e.dataTransfer.effectAllowed = "move";
@@ -383,6 +457,7 @@ function SortableItemList({
   function onDragOver(e: DragEvent, overKey: string) {
     if (!canDrag || !dragKey || dragKey === overKey) return;
     e.preventDefault();
+    e.stopPropagation();
     setDragLocal((prev) => {
       const list = prev ?? items;
       const from = list.findIndex((i) => i.key === dragKey);
@@ -395,7 +470,8 @@ function SortableItemList({
     });
   }
 
-  function onDragEnd() {
+  function onDragEnd(e: DragEvent) {
+    e.stopPropagation();
     if (!canDrag || !dragKey) {
       setDragKey(null);
       setDragLocal(null);
