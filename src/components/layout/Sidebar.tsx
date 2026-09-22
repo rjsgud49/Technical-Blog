@@ -103,8 +103,8 @@ export function Sidebar() {
   );
 
   return (
-    <aside className="hidden w-64 shrink-0 overflow-x-hidden border-r border-neutral-200 bg-white lg:block">
-      <div className="sticky top-14 flex h-[calc(100vh-3.5rem)] flex-col overflow-x-hidden overflow-y-auto px-5 pt-4 pb-6">
+    <aside className="sticky top-14 hidden h-[calc(100vh-3.5rem)] w-64 shrink-0 self-start overflow-x-hidden overflow-y-auto border-r border-neutral-200 bg-white lg:block">
+      <div className="flex min-h-full flex-col px-5 pt-4 pb-6">
         <div className="relative mb-5">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
