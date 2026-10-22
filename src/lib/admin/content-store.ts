@@ -8,6 +8,7 @@ import type {
   UpdatePostInput,
 } from "@/types/admin";
 import { apiContentAdminRepository } from "@/lib/admin/api-content-store";
+import { isApiMode } from "@/lib/data-mode";
 import { DEFAULT_FIELD } from "@/lib/field-path";
 import { normalizeSlug, slugify } from "@/lib/slugify";
 
@@ -261,21 +262,6 @@ export const localContentAdminRepository: ContentAdminRepository = {
     return store.categories[index];
   },
 
-  async reorderCategories(orderedIds) {
-    const store = readStore();
-    const categoriesById = new Map(
-      store.categories.map((category) => [category.id, category]),
-    );
-    orderedIds.forEach((id, order) => {
-      const category = categoriesById.get(id);
-      if (category) {
-        category.order = order;
-        category.updatedAt = now();
-      }
-    });
-    writeStore(store);
-  },
-
   async deleteCategory(id) {
     const store = readStore();
     const category = store.categories.find((c) => c.id === id);
@@ -466,6 +452,26 @@ export const localContentAdminRepository: ContentAdminRepository = {
     writeStore(store);
   },
 
+  async reorderCategories(orderedIds) {
+    const store = readStore();
+    const idSet = new Set(orderedIds);
+    orderedIds.forEach((id, index) => {
+      const cat = store.categories.find((c) => c.id === id);
+      if (cat) {
+        cat.order = index;
+        cat.updatedAt = now();
+      }
+    });
+    for (const cat of store.categories) {
+      if (idSet.has(cat.id)) continue;
+      const sibling = store.categories.find((c) => idSet.has(c.id));
+      if (sibling && cat.fieldSlug === sibling.fieldSlug) {
+        cat.order = orderedIds.length + (cat.order ?? 0);
+      }
+    }
+    writeStore(store);
+  },
+
   async deletePost(id) {
     const store = readStore();
     if (!store.posts.some((p) => p.id === id)) {
@@ -477,8 +483,7 @@ export const localContentAdminRepository: ContentAdminRepository = {
 };
 
 export function getContentAdminRepository(): ContentAdminRepository {
-  const source = process.env.NEXT_PUBLIC_DATA_SOURCE ?? "local";
-  if (source === "api") return apiContentAdminRepository;
+  if (isApiMode()) return apiContentAdminRepository;
   return localContentAdminRepository;
 }
 

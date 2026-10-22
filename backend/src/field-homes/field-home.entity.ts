@@ -14,7 +14,7 @@ export class FieldHome {
   @Column({ length: 160 })
   title: string;
 
-  @Column({ type: 'text', default: '' })
+  @Column({ type: 'text' })
   description: string;
 
   @Column({ length: 200, default: '' })

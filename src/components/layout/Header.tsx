@@ -8,13 +8,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useAdminContent } from "@/components/admin/AdminContentProvider";
 import { topNav } from "@/data/navigation";
 import { categoryPublicHref } from "@/lib/admin/post-mapper";
-import {
-  DEFAULT_FIELD,
-  fieldFromPathname,
-  fieldPath,
-} from "@/lib/field-path";
-
-type NavItem = { label: string; href: string };
+import { DEFAULT_FIELD, fieldFromPathname, fieldPath } from "@/lib/field-path";
 
 export function Header() {
   const pathname = usePathname();
@@ -23,32 +17,37 @@ export function Header() {
   const field = fieldFromPathname(pathname);
 
   const nav = useMemo(() => {
-    const custom: NavItem[] = categories
-      .filter(
-        (c) =>
-          !c.builtin &&
-          (c.fieldSlug || DEFAULT_FIELD) === field &&
-          Boolean(c.navLabel?.trim()),
-      )
+    const seedBySlug = new Map(
+      topNav.map((item) => {
+        const slug = item.href.split("/").filter(Boolean).pop() ?? "";
+        return [slug, item] as const;
+      }),
+    );
+
+    const items = [...categories]
+      .filter((c) => (c.fieldSlug || DEFAULT_FIELD) === field)
       .sort((a, b) => a.order - b.order)
-      .map((c) => ({
-        label: c.navLabel!.trim(),
-        href: categoryPublicHref(c.slug, field),
-      }));
-
-    if (field !== DEFAULT_FIELD) {
-      return [
-        ...custom,
-        { label: "단어사전", href: fieldPath(field, "/glossary") },
-      ];
+      .flatMap((c) => {
+        const seed = field === DEFAULT_FIELD ? seedBySlug.get(c.slug) : undefined;
+        if (seed) {
+          return [{ label: seed.label, href: seed.href }];
+        }
+        const navLabel =
+          c.navLabel?.trim() ||
+          (c.slug === "glossary" ? "단어사전" : undefined);
+        if (!navLabel) return [];
+        return [
+          {
+            label: navLabel,
+            href: categoryPublicHref(c.slug, field),
+          },
+        ];
+      });
+    if (field === DEFAULT_FIELD) return items;
+    if (items.some((item) => item.href === fieldPath(field, "/glossary"))) {
+      return items;
     }
-
-    const glossaryHref = fieldPath(DEFAULT_FIELD, "/glossary");
-    const seedMain = topNav.filter((item) => item.href !== glossaryHref);
-    const glossary = topNav.find((item) => item.href === glossaryHref);
-    const items: NavItem[] = [...seedMain, ...custom];
-    if (glossary) items.push(glossary);
-    return items;
+    return [...items, { label: "단어사전", href: fieldPath(field, "/glossary") }];
   }, [categories, field]);
 
   return (

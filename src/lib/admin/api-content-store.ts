@@ -32,17 +32,6 @@ export const apiContentAdminRepository: ContentAdminRepository = {
     });
   },
 
-  async reorderCategories(orderedIds) {
-    await Promise.all(
-      orderedIds.map((id, order) =>
-        apiFetch<ManagedCategory>(`/categories/${id}`, {
-          method: 'PATCH',
-          body: JSON.stringify({ order }),
-        }),
-      ),
-    );
-  },
-
   async deleteCategory(id) {
     await apiFetch<void>(`/categories/${id}`, { method: 'DELETE' });
   },
@@ -87,6 +76,17 @@ export const apiContentAdminRepository: ContentAdminRepository = {
     await Promise.all(
       orderedIds.map((id, order) =>
         apiFetch<ManagedPost>(`/posts/${id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ order }),
+        }),
+      ),
+    );
+  },
+
+  async reorderCategories(orderedIds) {
+    await Promise.all(
+      orderedIds.map((id, order) =>
+        apiFetch<ManagedCategory>(`/categories/${id}`, {
           method: 'PATCH',
           body: JSON.stringify({ order }),
         }),

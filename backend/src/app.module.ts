@@ -7,6 +7,7 @@ import { CategoriesModule } from './categories/categories.module';
 import { PostsModule } from './posts/posts.module';
 import { StudyServicesModule } from './study-services/study-services.module';
 import { FieldHomesModule } from './field-homes/field-homes.module';
+import { UploadsModule } from './uploads/uploads.module';
 import { User } from './users/user.entity';
 import { Category } from './categories/category.entity';
 import { Post } from './posts/post.entity';
@@ -38,6 +39,7 @@ import { HealthController } from './health.controller';
     PostsModule,
     StudyServicesModule,
     FieldHomesModule,
+    UploadsModule,
   ],
   controllers: [HealthController],
 })

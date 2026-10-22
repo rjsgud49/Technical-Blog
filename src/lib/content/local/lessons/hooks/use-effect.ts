@@ -148,5 +148,53 @@ const fullName = first + " " + last;`,
         ),
       ],
     },
+    {
+      id: "data-fetching",
+      title: "데이터 로딩을 Effect에 둘 때",
+      difficulty: "advanced",
+      blocks: [
+        p(
+          "클라이언트에서 반드시 fetch해야 한다면, race(경쟁)와 취소를 같이 설계합니다. 빠른 응답이 느린 응답보다 늦게 도착하면 이전 요청이 최신 화면을 덮어씁니다.",
+        ),
+        code(
+          `useEffect(() => {
+  const ac = new AbortController();
+  let cancelled = false;
+
+  async function load() {
+    const res = await fetch(\`/api/users/\${id}\`, { signal: ac.signal });
+    const data = await res.json();
+    if (!cancelled) setUser(data);
+  }
+
+  void load();
+  return () => {
+    cancelled = true;
+    ac.abort();
+  };
+}, [id]);`,
+          "tsx",
+          "AbortController로 경쟁 상태 막기",
+        ),
+        ul(
+          [
+            "가능하면 ",
+            term("rsc", "RSC"),
+            "·로더·TanStack Query처럼 캐시·재시도·중복 제거가 있는 층을 쓴다",
+          ],
+          [
+            "Effect fetch는 “외부 시스템 동기화”가 맞을 때만 — 검색어 디바운스 후 요청 등",
+          ],
+          [
+            "로딩/에러 UI는 컴포넌트 state 또는 ",
+            term("suspense", "Suspense"),
+            " 경계로 선언",
+          ],
+        ),
+        warn(
+          "id가 바뀔 때마다 Effect가 다시 돌고, 이전 요청을 취소하지 않으면 화면이 과거 데이터로 깜빡입니다. 의존성에 id를 넣고, 클린업에서 abort 하세요.",
+        ),
+      ],
+    },
   ],
 };

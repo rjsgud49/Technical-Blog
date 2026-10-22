@@ -23,6 +23,7 @@ function decodeBasicEntities(s: string) {
 /** TipTap이 만든 실제 구조 HTML인지 (마크다운이 <p>에 갇힌 경우 제외) */
 function isStructuredEditorHtml(html: string) {
   if (!isHtmlBody(html)) return false;
+  if (/<img\b/i.test(html)) return true;
   // 이미 제목·코드·콜아웃 노드가 있으면 구조화됨
   if (/<(h[1-3]|pre|aside\s[^>]*data-callout|ul|ol)\b/i.test(html)) {
     // 하지만 본문에 ## / ``` / [tip] 원문이 남아 있으면 재변환

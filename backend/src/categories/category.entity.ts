@@ -25,7 +25,7 @@ export class Category {
   @Column({ name: 'nav_label', type: 'varchar', length: 40, nullable: true })
   navLabel: string | null;
 
-  @Column({ type: 'text', default: '' })
+  @Column({ type: 'text' })
   description: string;
 
   /** 학습 분야 URL 세그먼트 (예: react) */

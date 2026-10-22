@@ -14,10 +14,13 @@ import { usePathname, useRouter } from "next/navigation";
 import { DifficultyBadge } from "@/components/ui/DifficultyBadge";
 import { useAdminContent } from "@/components/admin/AdminContentProvider";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { sidebarSections } from "@/data/navigation";
 import { categoryPublicHref } from "@/lib/admin/post-mapper";
 import { setSidebarOrder } from "@/lib/admin/sidebar-order";
 import { mergeSectionNavItems } from "@/lib/admin/sidebar-nav";
+import {
+  buildFieldNavSections,
+  type FieldNavSection,
+} from "@/lib/admin/field-nav";
 import { useFieldHome } from "@/lib/admin/use-field-home";
 import {
   DEFAULT_FIELD,
@@ -26,6 +29,7 @@ import {
 } from "@/lib/field-path";
 import type { ManagedCategory } from "@/types/admin";
 import type { Difficulty } from "@/types/content";
+import type { ManagedPost } from "@/types/admin";
 import { slugify } from "@/lib/slugify";
 
 type NavItem = {
@@ -58,12 +62,6 @@ export function Sidebar() {
     x: number;
     y: number;
   } | null>(null);
-  const [draggedCategoryId, setDraggedCategoryId] = useState<string | null>(
-    null,
-  );
-  const [draggedCategories, setDraggedCategories] = useState<
-    ManagedCategory[] | null
-  >(null);
   const home = useFieldHome(field);
 
   useEffect(() => {
@@ -82,20 +80,19 @@ export function Sidebar() {
       window.removeEventListener("rs-sidebar-order-changed", onChange);
   }, []);
 
-  const customCategories = useMemo(
+  const navSections = useMemo(
     () =>
-      [...categories]
-        .filter(
-          (c) =>
-            (!c.builtin ||
-              c.slug === "uncategorized" ||
-              (c.slug === "glossary" && field !== DEFAULT_FIELD)) &&
-            (c.fieldSlug || DEFAULT_FIELD) === field,
-        )
-        .sort((a, b) => a.order - b.order),
-    [categories, field],
+      buildFieldNavSections(field, categories).filter(
+        (section) =>
+          section.slug !== "uncategorized" ||
+          posts.some(
+            (post) =>
+              post.categorySlug === section.slug &&
+              (post.fieldSlug || DEFAULT_FIELD) === field,
+          ),
+      ),
+    [field, categories, posts],
   );
-  const displayedCategories = draggedCategories ?? customCategories;
   const publishedPosts = useMemo(
     () =>
       posts
@@ -106,7 +103,6 @@ export function Sidebar() {
         .sort((a, b) => a.order - b.order),
     [posts, field],
   );
-  const showSeedNav = field === DEFAULT_FIELD;
 
   const persistSectionOrder = useCallback(
     async (sectionId: string, items: NavItem[]) => {
@@ -123,6 +119,18 @@ export function Sidebar() {
       setOrderTick((n) => n + 1);
     },
     [reorderPosts],
+  );
+
+  const persistCategoryOrder = useCallback(
+    async (sections: FieldNavSection[]) => {
+      const ids = sections
+        .map((s) => s.categoryId)
+        .filter((id): id is string => Boolean(id));
+      if (ids.length > 0) {
+        await reorderCategories(ids);
+      }
+    },
+    [reorderCategories],
   );
 
   const onDeletePost = useCallback(
@@ -177,61 +185,10 @@ export function Sidebar() {
     }
   }
 
-  function onCategoryDragStart(
-    event: DragEvent<HTMLAnchorElement>,
-    category: ManagedCategory,
-  ) {
-    if (!canEdit) return;
-    event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("text/plain", category.id);
-    setDraggedCategoryId(category.id);
-    setDraggedCategories(customCategories);
-  }
-
-  function onCategoryDragEnter(
-    event: DragEvent<HTMLAnchorElement>,
-    targetId: string,
-  ) {
-    if (!draggedCategoryId || draggedCategoryId === targetId) return;
-    event.preventDefault();
-    setDraggedCategories((current) => {
-      if (!current) return current;
-      const from = current.findIndex(
-        (category) => category.id === draggedCategoryId,
-      );
-      const to = current.findIndex((category) => category.id === targetId);
-      if (from < 0 || to < 0) return current;
-      const next = [...current];
-      const [moved] = next.splice(from, 1);
-      next.splice(to, 0, moved);
-      return next;
-    });
-  }
-
-  async function onCategoryDragEnd() {
-    const next = draggedCategories;
-    setDraggedCategoryId(null);
-    setDraggedCategories(null);
-    if (!next) return;
-    const orderedIds = next.map((category) => category.id);
-    if (
-      orderedIds.every(
-        (id, index) => id === customCategories[index]?.id,
-      )
-    ) {
-      return;
-    }
-    try {
-      await reorderCategories(orderedIds);
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "목차 순서 저장 실패");
-    }
-  }
-
   return (
     <>
-    <aside className="hidden w-64 shrink-0 overflow-x-hidden border-r border-neutral-200 bg-white lg:block">
-      <div className="sticky top-14 flex h-[calc(100vh-3.5rem)] flex-col overflow-x-hidden overflow-y-auto px-5 pt-4 pb-6">
+    <aside className="sticky top-14 hidden h-[calc(100vh-3.5rem)] w-64 shrink-0 self-start overflow-x-hidden overflow-y-auto border-r border-neutral-200 bg-white lg:block">
+      <div className="flex min-h-full flex-col px-5 pt-4 pb-6">
         <div className="relative mb-5">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
@@ -263,115 +220,22 @@ export function Sidebar() {
         </div>
 
         <nav aria-label="목차" className="space-y-6">
-          {showSeedNav &&
-            sidebarSections.map((section) => {
-              const sectionActive =
-                pathname === section.href ||
-                pathname.startsWith(`${section.href}/`);
-
-              const items = mergeSectionNavItems(
-                section.id,
-                section.items ?? [],
-                publishedPosts,
-              );
-              // orderTick forces re-read of localStorage order
-              void orderTick;
-
-              return (
-                <div key={section.id}>
-                  <Link
-                    href={section.href}
-                    className={`mb-2 block text-sm font-semibold transition-colors duration-150 ${
-                      sectionActive
-                        ? "text-primary-700"
-                        : "text-neutral-800 hover:text-primary-600"
-                    }`}
-                  >
-                    {section.label}
-                  </Link>
-                  {items.length > 0 && (
-                    <SortableItemList
-                      items={items}
-                      pathname={pathname}
-                      canDrag={canEdit}
-                      onReorder={(next) =>
-                        void persistSectionOrder(section.id, next)
-                      }
-                      onDeletePost={canEdit ? onDeletePost : undefined}
-                    />
-                  )}
-                </div>
-              );
-            })}
-
-          {displayedCategories.map((cat) => {
-            const href = categoryPublicHref(cat.slug, field);
-            const active =
-              pathname === href || pathname.startsWith(`${href}/`);
-            const isUncategorized = cat.slug === "uncategorized";
-            const hasUncategorizedPosts = posts.some(
-              (post) =>
-                post.categorySlug === cat.slug &&
-                (post.fieldSlug || DEFAULT_FIELD) === field,
-            );
-            if (isUncategorized && !hasUncategorizedPosts) return null;
-            const catPosts: NavItem[] = mergeSectionNavItems(
-              cat.slug,
-              [],
-              publishedPosts.filter((p) => p.categorySlug === cat.slug),
-            );
-            void orderTick;
-
-            return (
-              <div
-                key={cat.id}
-                className={
-                  draggedCategoryId === cat.id ? "opacity-50" : undefined
-                }
-              >
-                <Link
-                  href={href}
-                  draggable={canEdit}
-                  onDragStart={(event) => onCategoryDragStart(event, cat)}
-                  onDragEnter={(event) => onCategoryDragEnter(event, cat.id)}
-                  onDragOver={(event) => {
-                    if (draggedCategoryId) event.preventDefault();
-                  }}
-                  onDrop={(event) => event.preventDefault()}
-                  onDragEnd={() => void onCategoryDragEnd()}
-                  className={`mb-2 flex items-center gap-2 text-sm font-semibold transition-colors duration-150 ${
-                    active
-                      ? "text-primary-700"
-                      : "text-neutral-800 hover:text-primary-600"
-                  }`}
-                  onContextMenu={(event) => onCategoryContextMenu(event, cat)}
-                >
-                  {canEdit && (
-                    <span
-                      aria-hidden
-                      className="shrink-0 cursor-grab text-[10px] text-neutral-300 active:cursor-grabbing"
-                    >
-                      ⠿
-                    </span>
-                  )}
-                  <span className="min-w-0 truncate">{cat.label}</span>
-                </Link>
-                {catPosts.length > 0 && (
-                  <SortableItemList
-                    items={catPosts}
-                    pathname={pathname}
-                    canDrag={canEdit}
-                    onReorder={(next) =>
-                      void persistSectionOrder(cat.slug, next)
-                    }
-                    onDeletePost={canEdit ? onDeletePost : undefined}
-                  />
-                )}
-              </div>
-            );
-          })}
-
-          {!showSeedNav && customCategories.length === 0 && (
+          {navSections.length > 0 ? (
+            <SortableSectionList
+              sections={navSections}
+              pathname={pathname}
+              canDrag={canEdit}
+              publishedPosts={publishedPosts}
+              onReorderSections={(next) => void persistCategoryOrder(next)}
+              onReorderPosts={(slug, next) =>
+                void persistSectionOrder(slug, next)
+              }
+              categories={categories}
+              onCategoryContextMenu={onCategoryContextMenu}
+              onDeletePost={canEdit ? onDeletePost : undefined}
+              orderTick={orderTick}
+            />
+          ) : (
             <p className="text-sm text-neutral-400">
               {canEdit
                 ? "「+ 카테고리」로 목차를 추가하세요."
@@ -543,6 +407,146 @@ function CategoryQuickAdd({
   );
 }
 
+function SortableSectionList({
+  sections,
+  pathname,
+  canDrag,
+  publishedPosts,
+  onReorderSections,
+  onReorderPosts,
+  categories,
+  onCategoryContextMenu,
+  onDeletePost,
+  orderTick,
+}: {
+  sections: FieldNavSection[];
+  pathname: string;
+  canDrag: boolean;
+  publishedPosts: ManagedPost[];
+  onReorderSections: (next: FieldNavSection[]) => void;
+  onReorderPosts: (slug: string, next: NavItem[]) => void;
+  categories: ManagedCategory[];
+  onCategoryContextMenu: (
+    event: ReactMouseEvent<HTMLAnchorElement>,
+    category: ManagedCategory,
+  ) => void;
+  onDeletePost?: (postId: string, title: string) => void;
+  orderTick: number;
+}) {
+  const [dragLocal, setDragLocal] = useState<FieldNavSection[] | null>(null);
+  const [dragKey, setDragKey] = useState<string | null>(null);
+  const display = dragLocal ?? sections;
+
+  function onDragStart(e: DragEvent, key: string) {
+    if (!canDrag) return;
+    setDragLocal(sections);
+    setDragKey(key);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", `section:${key}`);
+  }
+
+  function onDragOver(e: DragEvent, overKey: string) {
+    if (!canDrag || !dragKey || dragKey === overKey) return;
+    e.preventDefault();
+    setDragLocal((prev) => {
+      const list = prev ?? sections;
+      const from = list.findIndex((i) => i.key === dragKey);
+      const to = list.findIndex((i) => i.key === overKey);
+      if (from < 0 || to < 0 || from === to) return list;
+      const next = [...list];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+  }
+
+  function onDragEnd() {
+    if (!canDrag || !dragKey) {
+      setDragKey(null);
+      setDragLocal(null);
+      return;
+    }
+    const next = dragLocal ?? sections;
+    const same =
+      next.length === sections.length &&
+      next.every((item, i) => item.key === sections[i]?.key);
+    if (!same) onReorderSections(next);
+    setDragKey(null);
+    setDragLocal(null);
+  }
+
+  void orderTick;
+
+  return (
+    <>
+      {display.map((section) => {
+        const sectionActive =
+          pathname === section.href ||
+          pathname.startsWith(`${section.href}/`);
+        const items = mergeSectionNavItems(
+          section.slug,
+          section.seedItems,
+          publishedPosts,
+        );
+        const category = categories.find((item) => item.id === section.categoryId);
+        const draggable = canDrag && Boolean(section.categoryId);
+
+        return (
+          <div
+            key={section.key}
+            onDragOver={(e) => {
+              if (dragKey) onDragOver(e, section.key);
+            }}
+            className={dragKey === section.key ? "opacity-50" : undefined}
+          >
+            <div
+              draggable={draggable}
+              onDragStart={(e) => onDragStart(e, section.key)}
+              onDragEnd={onDragEnd}
+              className="mb-2 flex min-w-0 items-center gap-1"
+            >
+              {draggable && (
+                <span
+                  className="shrink-0 cursor-grab text-[10px] text-neutral-300 hover:text-neutral-400 active:cursor-grabbing"
+                  aria-hidden
+                  title="카테고리 순서 변경"
+                >
+                  ⠿
+                </span>
+              )}
+              <Link
+                href={section.href}
+                className={`min-w-0 flex-1 truncate text-sm font-semibold transition-colors duration-150 ${
+                  sectionActive
+                    ? "text-primary-700"
+                    : "text-neutral-800 hover:text-primary-600"
+                } ${draggable ? "cursor-grab active:cursor-grabbing" : ""}`}
+                onClick={(e) => {
+                  if (dragKey) e.preventDefault();
+                }}
+                onContextMenu={(event) => {
+                  if (category) onCategoryContextMenu(event, category);
+                }}
+              >
+                {section.label}
+              </Link>
+            </div>
+            {items.length > 0 && (
+              <SortableItemList
+                items={items}
+                pathname={pathname}
+                canDrag={canDrag}
+                onReorder={(next) => onReorderPosts(section.slug, next)}
+                onDeletePost={onDeletePost}
+              />
+            )}
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
 function SortableItemList({
   items,
   pathname,
@@ -562,6 +566,7 @@ function SortableItemList({
 
   function onDragStart(e: DragEvent, key: string) {
     if (!canDrag) return;
+    e.stopPropagation();
     setDragLocal(items);
     setDragKey(key);
     e.dataTransfer.effectAllowed = "move";
@@ -571,6 +576,7 @@ function SortableItemList({
   function onDragOver(e: DragEvent, overKey: string) {
     if (!canDrag || !dragKey || dragKey === overKey) return;
     e.preventDefault();
+    e.stopPropagation();
     setDragLocal((prev) => {
       const list = prev ?? items;
       const from = list.findIndex((i) => i.key === dragKey);
@@ -583,7 +589,8 @@ function SortableItemList({
     });
   }
 
-  function onDragEnd() {
+  function onDragEnd(e: DragEvent) {
+    e.stopPropagation();
     if (!canDrag || !dragKey) {
       setDragKey(null);
       setDragLocal(null);
