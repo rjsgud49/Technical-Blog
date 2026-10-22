@@ -25,6 +25,7 @@ interface AdminContentContextValue {
   refresh: () => Promise<void>;
   createCategory: (input: CreateCategoryInput) => Promise<ManagedCategory>;
   updateCategory: (id: string, input: UpdateCategoryInput) => Promise<ManagedCategory>;
+  reorderCategories: (orderedIds: string[]) => Promise<void>;
   deleteCategory: (id: string) => Promise<void>;
   createPost: (input: CreatePostInput, authorId: string) => Promise<ManagedPost>;
   updatePost: (id: string, input: UpdatePostInput) => Promise<ManagedPost>;
@@ -87,6 +88,10 @@ export function AdminContentProvider({
         const updated = await repo.updateCategory(id, input);
         await refresh();
         return updated;
+      },
+      reorderCategories: async (orderedIds) => {
+        await repo.reorderCategories(orderedIds);
+        await refresh();
       },
       deleteCategory: async (id) => {
         await repo.deleteCategory(id);

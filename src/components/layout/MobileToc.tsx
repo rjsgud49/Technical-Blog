@@ -44,7 +44,10 @@ export function MobileToc() {
     const custom = categories
       .filter(
         (c) =>
-          !c.builtin && (c.fieldSlug || DEFAULT_FIELD) === field,
+          (!c.builtin ||
+            c.slug === "uncategorized" ||
+            (c.slug === "glossary" && field !== DEFAULT_FIELD)) &&
+          (c.fieldSlug || DEFAULT_FIELD) === field,
       )
       .sort((a, b) => a.order - b.order)
       .map((cat) => ({

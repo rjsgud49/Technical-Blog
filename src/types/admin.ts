@@ -87,6 +87,7 @@ export interface ContentAdminRepository {
   getCategory(slug: string): Promise<ManagedCategory | null>;
   createCategory(input: CreateCategoryInput): Promise<ManagedCategory>;
   updateCategory(id: string, input: UpdateCategoryInput): Promise<ManagedCategory>;
+  reorderCategories(orderedIds: string[]): Promise<void>;
   deleteCategory(id: string): Promise<void>;
 
   listPosts(): Promise<ManagedPost[]>;

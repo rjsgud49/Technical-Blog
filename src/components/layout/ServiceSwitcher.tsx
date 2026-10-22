@@ -17,6 +17,7 @@ import {
 import {
   createStudyServiceAsync,
   deleteStudyServiceAsync,
+  ensureStudyServiceGlossaries,
   hydrateStudyServicesFromApi,
 } from "@/lib/admin/services-store";
 import { useStudyServices } from "@/lib/admin/use-study-services";
@@ -76,6 +77,10 @@ export function ServiceSwitcher() {
       void hydrateFieldHomeFromApi(fieldSlug);
     }
   }, [fieldSlug]);
+
+  useEffect(() => {
+    if (!isApiMode()) void ensureStudyServiceGlossaries();
+  }, [services]);
 
   useEffect(() => {
     if (!open || !isApiMode()) return;

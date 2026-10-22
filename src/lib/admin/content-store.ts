@@ -91,6 +91,38 @@ function emptyStore(): ContentStoreData {
   };
 }
 
+function getOrCreateUncategorizedCategory(
+  store: ContentStoreData,
+  fieldSlug: string,
+): ManagedCategory {
+  const existing = store.categories.find(
+    (category) =>
+      category.slug === "uncategorized" &&
+      (category.fieldSlug || DEFAULT_FIELD) === fieldSlug,
+  );
+  if (existing) return existing;
+
+  const category: ManagedCategory = {
+    id: uid("cat"),
+    slug: "uncategorized",
+    label: "카테고리없음",
+    description: "소속 카테고리가 삭제되었거나 지정되지 않은 글",
+    fieldSlug,
+    order:
+      Math.max(
+        -1,
+        ...store.categories
+          .filter((item) => (item.fieldSlug || DEFAULT_FIELD) === fieldSlug)
+          .map((item) => item.order),
+      ) + 1,
+    builtin: true,
+    createdAt: now(),
+    updatedAt: now(),
+  };
+  store.categories.push(category);
+  return category;
+}
+
 function readStore(): ContentStoreData {
   if (typeof window === "undefined") return emptyStore();
   try {
@@ -130,6 +162,25 @@ function readStore(): ContentStoreData {
       list.forEach((post, i) => {
         if (typeof post.order !== "number") post.order = i;
       });
+    }
+    let repairedOrphanedPosts = false;
+    for (const post of parsed.posts) {
+      const fieldSlug = post.fieldSlug || DEFAULT_FIELD;
+      const categoryExists = parsed.categories.some(
+        (category) =>
+          category.slug === post.categorySlug &&
+          (category.fieldSlug || DEFAULT_FIELD) === fieldSlug,
+      );
+      if (!categoryExists) {
+        post.categorySlug = getOrCreateUncategorizedCategory(
+          parsed,
+          fieldSlug,
+        ).slug;
+        repairedOrphanedPosts = true;
+      }
+    }
+    if (repairedOrphanedPosts) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
     }
     return parsed;
   } catch {
@@ -210,6 +261,21 @@ export const localContentAdminRepository: ContentAdminRepository = {
     return store.categories[index];
   },
 
+  async reorderCategories(orderedIds) {
+    const store = readStore();
+    const categoriesById = new Map(
+      store.categories.map((category) => [category.id, category]),
+    );
+    orderedIds.forEach((id, order) => {
+      const category = categoriesById.get(id);
+      if (category) {
+        category.order = order;
+        category.updatedAt = now();
+      }
+    });
+    writeStore(store);
+  },
+
   async deleteCategory(id) {
     const store = readStore();
     const category = store.categories.find((c) => c.id === id);
@@ -217,9 +283,29 @@ export const localContentAdminRepository: ContentAdminRepository = {
     if (category.builtin) {
       throw new Error("내장 카테고리는 삭제할 수 없습니다.");
     }
-    const hasPosts = store.posts.some((p) => p.categorySlug === category.slug);
-    if (hasPosts) {
-      throw new Error("이 카테고리에 글이 있어 삭제할 수 없습니다. 글을 먼저 삭제하세요.");
+    const fieldSlug = category.fieldSlug || DEFAULT_FIELD;
+    const attachedPosts = store.posts.filter(
+      (post) =>
+        post.categorySlug === category.slug &&
+        (post.fieldSlug || DEFAULT_FIELD) === fieldSlug,
+    );
+    if (attachedPosts.length > 0) {
+      const fallback = getOrCreateUncategorizedCategory(store, fieldSlug);
+      let nextOrder = Math.max(
+        -1,
+        ...store.posts
+          .filter(
+            (post) =>
+              post.categorySlug === fallback.slug &&
+              (post.fieldSlug || DEFAULT_FIELD) === fieldSlug,
+          )
+          .map((post) => post.order),
+      ) + 1;
+      for (const post of attachedPosts) {
+        post.categorySlug = fallback.slug;
+        post.order = nextOrder++;
+        post.updatedAt = now();
+      }
     }
     store.categories = store.categories.filter((c) => c.id !== id);
     writeStore(store);

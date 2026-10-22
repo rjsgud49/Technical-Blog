@@ -3,13 +3,14 @@
 import {
   DragEvent,
   FormEvent,
+  MouseEvent as ReactMouseEvent,
   useCallback,
   useEffect,
   useMemo,
   useState,
 } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { DifficultyBadge } from "@/components/ui/DifficultyBadge";
 import { useAdminContent } from "@/components/admin/AdminContentProvider";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -23,6 +24,7 @@ import {
   fieldFromPathname,
   fieldHome,
 } from "@/lib/field-path";
+import type { ManagedCategory } from "@/types/admin";
 import type { Difficulty } from "@/types/content";
 import { slugify } from "@/lib/slugify";
 
@@ -36,13 +38,42 @@ type NavItem = {
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const field = fieldFromPathname(pathname);
   const { session } = useAuth();
-  const { categories, posts, createCategory, reorderPosts, deletePost } =
-    useAdminContent();
+  const {
+    categories,
+    posts,
+    createCategory,
+    updateCategory,
+    reorderCategories,
+    deleteCategory,
+    reorderPosts,
+    deletePost,
+  } = useAdminContent();
   const canEdit = Boolean(session);
   const [orderTick, setOrderTick] = useState(0);
+  const [categoryMenu, setCategoryMenu] = useState<{
+    category: ManagedCategory;
+    x: number;
+    y: number;
+  } | null>(null);
+  const [draggedCategoryId, setDraggedCategoryId] = useState<string | null>(
+    null,
+  );
+  const [draggedCategories, setDraggedCategories] = useState<
+    ManagedCategory[] | null
+  >(null);
   const home = useFieldHome(field);
+
+  useEffect(() => {
+    if (!categoryMenu) return;
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setCategoryMenu(null);
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [categoryMenu]);
 
   useEffect(() => {
     const onChange = () => setOrderTick((n) => n + 1);
@@ -56,11 +87,15 @@ export function Sidebar() {
       [...categories]
         .filter(
           (c) =>
-            !c.builtin && (c.fieldSlug || DEFAULT_FIELD) === field,
+            (!c.builtin ||
+              c.slug === "uncategorized" ||
+              (c.slug === "glossary" && field !== DEFAULT_FIELD)) &&
+            (c.fieldSlug || DEFAULT_FIELD) === field,
         )
         .sort((a, b) => a.order - b.order),
     [categories, field],
   );
+  const displayedCategories = draggedCategories ?? customCategories;
   const publishedPosts = useMemo(
     () =>
       posts
@@ -102,7 +137,99 @@ export function Sidebar() {
     [deletePost],
   );
 
+  function onCategoryContextMenu(
+    event: ReactMouseEvent<HTMLAnchorElement>,
+    category: ManagedCategory,
+  ) {
+    if (!canEdit || category.builtin) return;
+    event.preventDefault();
+    setCategoryMenu({
+      category,
+      x: Math.min(event.clientX, window.innerWidth - 180),
+      y: Math.min(event.clientY, window.innerHeight - 100),
+    });
+  }
+
+  async function onRenameCategory(category: ManagedCategory) {
+    setCategoryMenu(null);
+    const label = prompt("목차 이름", category.label)?.trim();
+    if (!label || label === category.label) return;
+    try {
+      await updateCategory(category.id, { label });
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "목차 수정 실패");
+    }
+  }
+
+  async function onDeleteCategory(category: ManagedCategory) {
+    setCategoryMenu(null);
+    if (!confirm(`「${category.label}」 목차를 삭제할까요? 글은 카테고리없음으로 이동합니다.`)) {
+      return;
+    }
+    try {
+      await deleteCategory(category.id);
+      const categoryPath = categoryPublicHref(category.slug, field);
+      if (pathname === categoryPath || pathname.startsWith(`${categoryPath}/`)) {
+        router.push(fieldHome(field));
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "목차 삭제 실패");
+    }
+  }
+
+  function onCategoryDragStart(
+    event: DragEvent<HTMLAnchorElement>,
+    category: ManagedCategory,
+  ) {
+    if (!canEdit) return;
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", category.id);
+    setDraggedCategoryId(category.id);
+    setDraggedCategories(customCategories);
+  }
+
+  function onCategoryDragEnter(
+    event: DragEvent<HTMLAnchorElement>,
+    targetId: string,
+  ) {
+    if (!draggedCategoryId || draggedCategoryId === targetId) return;
+    event.preventDefault();
+    setDraggedCategories((current) => {
+      if (!current) return current;
+      const from = current.findIndex(
+        (category) => category.id === draggedCategoryId,
+      );
+      const to = current.findIndex((category) => category.id === targetId);
+      if (from < 0 || to < 0) return current;
+      const next = [...current];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+  }
+
+  async function onCategoryDragEnd() {
+    const next = draggedCategories;
+    setDraggedCategoryId(null);
+    setDraggedCategories(null);
+    if (!next) return;
+    const orderedIds = next.map((category) => category.id);
+    if (
+      orderedIds.every(
+        (id, index) => id === customCategories[index]?.id,
+      )
+    ) {
+      return;
+    }
+    try {
+      await reorderCategories(orderedIds);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "목차 순서 저장 실패");
+    }
+  }
+
   return (
+    <>
     <aside className="hidden w-64 shrink-0 overflow-x-hidden border-r border-neutral-200 bg-white lg:block">
       <div className="sticky top-14 flex h-[calc(100vh-3.5rem)] flex-col overflow-x-hidden overflow-y-auto px-5 pt-4 pb-6">
         <div className="relative mb-5">
@@ -130,7 +257,7 @@ export function Sidebar() {
           </div>
           {canEdit && (
             <p className="mt-3 text-[11px] text-neutral-400">
-              글을 드래그해 순서를 바꿀 수 있습니다
+              목차와 글은 드래그해 정렬하고, 목차 우클릭으로 수정·삭제할 수 있습니다
             </p>
           )}
         </div>
@@ -177,10 +304,17 @@ export function Sidebar() {
               );
             })}
 
-          {customCategories.map((cat) => {
+          {displayedCategories.map((cat) => {
             const href = categoryPublicHref(cat.slug, field);
             const active =
               pathname === href || pathname.startsWith(`${href}/`);
+            const isUncategorized = cat.slug === "uncategorized";
+            const hasUncategorizedPosts = posts.some(
+              (post) =>
+                post.categorySlug === cat.slug &&
+                (post.fieldSlug || DEFAULT_FIELD) === field,
+            );
+            if (isUncategorized && !hasUncategorizedPosts) return null;
             const catPosts: NavItem[] = mergeSectionNavItems(
               cat.slug,
               [],
@@ -189,16 +323,38 @@ export function Sidebar() {
             void orderTick;
 
             return (
-              <div key={cat.id}>
+              <div
+                key={cat.id}
+                className={
+                  draggedCategoryId === cat.id ? "opacity-50" : undefined
+                }
+              >
                 <Link
                   href={href}
-                  className={`mb-2 block text-sm font-semibold transition-colors duration-150 ${
+                  draggable={canEdit}
+                  onDragStart={(event) => onCategoryDragStart(event, cat)}
+                  onDragEnter={(event) => onCategoryDragEnter(event, cat.id)}
+                  onDragOver={(event) => {
+                    if (draggedCategoryId) event.preventDefault();
+                  }}
+                  onDrop={(event) => event.preventDefault()}
+                  onDragEnd={() => void onCategoryDragEnd()}
+                  className={`mb-2 flex items-center gap-2 text-sm font-semibold transition-colors duration-150 ${
                     active
                       ? "text-primary-700"
                       : "text-neutral-800 hover:text-primary-600"
                   }`}
+                  onContextMenu={(event) => onCategoryContextMenu(event, cat)}
                 >
-                  {cat.label}
+                  {canEdit && (
+                    <span
+                      aria-hidden
+                      className="shrink-0 cursor-grab text-[10px] text-neutral-300 active:cursor-grabbing"
+                    >
+                      ⠿
+                    </span>
+                  )}
+                  <span className="min-w-0 truncate">{cat.label}</span>
                 </Link>
                 {catPosts.length > 0 && (
                   <SortableItemList
@@ -229,6 +385,38 @@ export function Sidebar() {
         </div>
       </div>
     </aside>
+    {categoryMenu && (
+      <div
+        className="fixed inset-0 z-50"
+        onClick={() => setCategoryMenu(null)}
+      >
+        <div
+          role="menu"
+          aria-label={`${categoryMenu.category.label} 목차 메뉴`}
+          className="fixed min-w-36 rounded-lg border border-neutral-200 bg-white py-1 shadow-lg"
+          style={{ left: categoryMenu.x, top: categoryMenu.y }}
+          onClick={(event) => event.stopPropagation()}
+        >
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => void onRenameCategory(categoryMenu.category)}
+            className="block w-full px-3 py-2 text-left text-sm text-neutral-700 hover:bg-neutral-50"
+          >
+            목차 수정
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => void onDeleteCategory(categoryMenu.category)}
+            className="block w-full px-3 py-2 text-left text-sm text-error-600 hover:bg-error-50"
+          >
+            목차 삭제
+          </button>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 

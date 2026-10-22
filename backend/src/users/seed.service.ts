@@ -63,6 +63,7 @@ export class SeedService {
 
   async run() {
     await this.seedCategories();
+    await this.seedFieldGlossaries();
     await this.removeLegacySkills();
     await this.seedReactService();
     await this.seedReactHome();
@@ -84,6 +85,31 @@ export class SeedService {
       await this.categories.save(
         this.categories.create({
           ...item,
+          builtin: true,
+        }),
+      );
+    }
+  }
+
+  private async seedFieldGlossaries() {
+    const fields = await this.services.find();
+    for (const field of fields) {
+      if (field.path === 'react') continue;
+      const exists = await this.categories.findOne({
+        where: { slug: 'glossary', fieldSlug: field.path },
+      });
+      if (exists) continue;
+
+      const order = await this.categories.count({
+        where: { fieldSlug: field.path },
+      });
+      await this.categories.save(
+        this.categories.create({
+          slug: 'glossary',
+          label: '단어사전',
+          description: `${field.name} 핵심 용어를 모아 봅니다.`,
+          fieldSlug: field.path,
+          order,
           builtin: true,
         }),
       );

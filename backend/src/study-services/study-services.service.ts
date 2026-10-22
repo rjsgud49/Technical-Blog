@@ -6,6 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { StudyService } from './study-service.entity';
+import { Category } from '../categories/category.entity';
 import { CreateStudyServiceDto } from '../common/dto';
 import { normalizeFieldSlug, toStudyServiceDto } from '../common/mappers';
 
@@ -24,6 +25,8 @@ export class StudyServicesService {
   constructor(
     @InjectRepository(StudyService)
     private readonly services: Repository<StudyService>,
+    @InjectRepository(Category)
+    private readonly categories: Repository<Category>,
   ) {}
 
   async list() {
@@ -58,17 +61,39 @@ export class StudyServicesService {
       throw new BadRequestException('이미 같은 경로의 분야가 있습니다.');
     }
 
-    const shortName = (dto.shortName?.trim() || name.slice(0, 2).toUpperCase())
-      .slice(0, 3);
-    const row = await this.services.save(
-      this.services.create({
-        name,
-        shortName: shortName || 'FD',
-        description: dto.description?.trim() ?? '',
-        path,
-        builtin: false,
-      }),
-    );
+    const shortName = (
+      dto.shortName?.trim() || name.slice(0, 2).toUpperCase()
+    ).slice(0, 3);
+    const row = await this.services.manager.transaction(async (manager) => {
+      const services = manager.getRepository(StudyService);
+      const categories = manager.getRepository(Category);
+      const created = await services.save(
+        services.create({
+          name,
+          shortName: shortName || 'FD',
+          description: dto.description?.trim() ?? '',
+          path,
+          builtin: false,
+        }),
+      );
+      const glossary = await categories.findOne({
+        where: { fieldSlug: path, slug: 'glossary' },
+      });
+      if (!glossary) {
+        const order = await categories.count({ where: { fieldSlug: path } });
+        await categories.save(
+          categories.create({
+            slug: 'glossary',
+            label: '단어사전',
+            description: `${name} 핵심 용어를 모아 봅니다.`,
+            fieldSlug: path,
+            order,
+            builtin: true,
+          }),
+        );
+      }
+      return created;
+    });
     return toStudyServiceDto(row);
   }
 

@@ -37,7 +37,10 @@ export function Header() {
       }));
 
     if (field !== DEFAULT_FIELD) {
-      return custom;
+      return [
+        ...custom,
+        { label: "단어사전", href: fieldPath(field, "/glossary") },
+      ];
     }
 
     const glossaryHref = fieldPath(DEFAULT_FIELD, "/glossary");

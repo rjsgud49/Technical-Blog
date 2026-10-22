@@ -10,6 +10,7 @@ import {
 } from "@/lib/field-path";
 import { apiFetch } from "@/lib/api/client";
 import { isApiMode } from "@/lib/data-mode";
+import { localContentAdminRepository } from "@/lib/admin/content-store";
 
 const STORAGE_KEY = "rs.study.services.v1";
 
@@ -76,6 +77,30 @@ function buildSnapshot(): StudyService[] {
   const customPaths = new Set(custom.map((s) => s.path));
   const builtins = BUILTIN_SERVICES.filter((s) => !customPaths.has(s.path));
   return [...builtins, ...custom];
+}
+
+export async function ensureStudyServiceGlossaries() {
+  if (isApiMode()) return;
+  const categories = await localContentAdminRepository.listCategories();
+  for (const service of listStudyServices()) {
+    if (
+      categories.some(
+        (category) =>
+          category.slug === "glossary" &&
+          (category.fieldSlug || "react") === service.path,
+      )
+    ) {
+      continue;
+    }
+    categories.push(
+      await localContentAdminRepository.createCategory({
+        slug: "glossary",
+        label: "단어사전",
+        description: `${service.name} 핵심 용어를 모아 봅니다.`,
+        fieldSlug: service.path,
+      }),
+    );
+  }
 }
 
 export function listStudyServices(): StudyService[] {
@@ -163,7 +188,9 @@ export async function createStudyServiceAsync(
   input: CreateStudyServiceInput,
 ): Promise<StudyService> {
   if (!isApiMode()) {
-    return createStudyService(input);
+    const service = createStudyService(input);
+    await ensureStudyServiceGlossaries();
+    return service;
   }
   const created = await apiFetch<StudyService>("/services", {
     method: "POST",

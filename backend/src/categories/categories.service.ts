@@ -15,7 +15,6 @@ export class CategoriesService {
   constructor(
     @InjectRepository(Category)
     private readonly categories: Repository<Category>,
-    @InjectRepository(Post) private readonly posts: Repository<Post>,
   ) {}
 
   async list(fieldSlug?: string) {
@@ -78,19 +77,39 @@ export class CategoriesService {
   }
 
   async remove(id: string) {
-    const row = await this.categories.findOne({ where: { id } });
-    if (!row) throw new NotFoundException('카테고리를 찾을 수 없습니다.');
-    if (row.builtin) {
-      throw new BadRequestException('내장 카테고리는 삭제할 수 없습니다.');
-    }
-    const postCount = await this.posts.count({
-      where: { categoryId: row.id },
+    await this.categories.manager.transaction(async (manager) => {
+      const categories = manager.getRepository(Category);
+      const posts = manager.getRepository(Post);
+      const row = await categories.findOne({ where: { id } });
+      if (!row) throw new NotFoundException('카테고리를 찾을 수 없습니다.');
+      if (row.builtin) {
+        throw new BadRequestException('내장 카테고리는 삭제할 수 없습니다.');
+      }
+
+      const postCount = await posts.count({ where: { categoryId: row.id } });
+      if (postCount > 0) {
+        let fallback = await categories.findOne({
+          where: { fieldSlug: row.fieldSlug, slug: 'uncategorized' },
+        });
+        if (!fallback) {
+          const categoryCount = await categories.count({
+            where: { fieldSlug: row.fieldSlug },
+          });
+          fallback = await categories.save(
+            categories.create({
+              slug: 'uncategorized',
+              label: '카테고리없음',
+              description: '소속 카테고리가 삭제되었거나 지정되지 않은 글',
+              fieldSlug: row.fieldSlug,
+              order: categoryCount,
+              builtin: true,
+            }),
+          );
+        }
+        await posts.update({ categoryId: row.id }, { categoryId: fallback.id });
+      }
+
+      await categories.remove(row);
     });
-    if (postCount > 0) {
-      throw new BadRequestException(
-        '이 카테고리에 글이 있어 삭제할 수 없습니다. 글을 먼저 삭제하세요.',
-      );
-    }
-    await this.categories.remove(row);
   }
 }
