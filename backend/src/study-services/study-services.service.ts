@@ -72,6 +72,7 @@ export class StudyServicesService {
           categories.create({
             slug: 'glossary',
             label: '단어사전',
+            navLabel: '단어사전',
             description: `${name} 핵심 용어를 모아 봅니다.`,
             fieldSlug: path,
             order,

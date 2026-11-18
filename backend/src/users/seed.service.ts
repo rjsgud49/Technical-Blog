@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
 import { User } from './user.entity';
@@ -12,6 +12,7 @@ const BUILTIN_CATEGORIES = [
   {
     slug: 'history',
     label: 'React 역사',
+    navLabel: '역사',
     description: '탄생부터 현대 React까지',
     fieldSlug: 'react',
     order: 0,
@@ -19,6 +20,7 @@ const BUILTIN_CATEGORIES = [
   {
     slug: 'structure',
     label: 'React 구조',
+    navLabel: '구조',
     description: '렌더링 · Fiber · 데이터 흐름',
     fieldSlug: 'react',
     order: 1,
@@ -26,6 +28,7 @@ const BUILTIN_CATEGORIES = [
   {
     slug: 'hooks',
     label: 'Hooks',
+    navLabel: '훅',
     description: '기본 훅부터 커스텀 훅까지',
     fieldSlug: 'react',
     order: 2,
@@ -33,6 +36,7 @@ const BUILTIN_CATEGORIES = [
   {
     slug: 'patterns',
     label: '패턴',
+    navLabel: '패턴',
     description: '실무 구성 패턴',
     fieldSlug: 'react',
     order: 3,
@@ -40,6 +44,7 @@ const BUILTIN_CATEGORIES = [
   {
     slug: 'glossary',
     label: '단어사전',
+    navLabel: '사전',
     description: 'React 핵심 용어',
     fieldSlug: 'react',
     order: 4,
@@ -76,8 +81,10 @@ export class SeedService {
         where: { slug: item.slug, fieldSlug: item.fieldSlug },
       });
       if (exists) {
-        if (!exists.fieldSlug) {
-          exists.fieldSlug = item.fieldSlug;
+        // 헤더 메뉴는 navLabel만 본다 — 비어 있을 때만 채우고 관리자 수정값은 유지
+        if (!exists.fieldSlug || !exists.navLabel) {
+          exists.fieldSlug ||= item.fieldSlug;
+          exists.navLabel ||= item.navLabel;
           await this.categories.save(exists);
         }
         continue;
@@ -92,6 +99,11 @@ export class SeedService {
   }
 
   private async seedFieldGlossaries() {
+    // 분야 목록에 없는 고아 분야까지 포함해 모든 단어사전에 헤더 라벨 보장
+    await this.categories.update(
+      { slug: 'glossary', navLabel: IsNull() },
+      { navLabel: '단어사전' },
+    );
     const fields = await this.services.find();
     for (const field of fields) {
       if (field.path === 'react') continue;
@@ -107,6 +119,7 @@ export class SeedService {
         this.categories.create({
           slug: 'glossary',
           label: '단어사전',
+          navLabel: '단어사전',
           description: `${field.name} 핵심 용어를 모아 봅니다.`,
           fieldSlug: field.path,
           order,

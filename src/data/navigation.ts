@@ -10,14 +10,6 @@ export const siteConfig = {
 
 const F = DEFAULT_FIELD;
 
-export const topNav = [
-  { label: "역사", href: fieldPath(F, "/history") },
-  { label: "구조", href: fieldPath(F, "/structure") },
-  { label: "훅", href: fieldPath(F, "/hooks") },
-  { label: "패턴", href: fieldPath(F, "/patterns") },
-  { label: "사전", href: fieldPath(F, "/glossary") },
-] as const;
-
 /** UI 네비게이션만 유지. 본문·목록 데이터는 ContentRepository를 사용하세요. */
 export const sidebarSections: NavSection[] = [
   {

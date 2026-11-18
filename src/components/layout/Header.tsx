@@ -6,9 +6,8 @@ import { usePathname } from "next/navigation";
 import { ServiceSwitcher } from "@/components/layout/ServiceSwitcher";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useAdminContent } from "@/components/admin/AdminContentProvider";
-import { topNav } from "@/data/navigation";
 import { categoryPublicHref } from "@/lib/admin/post-mapper";
-import { DEFAULT_FIELD, fieldFromPathname, fieldPath } from "@/lib/field-path";
+import { DEFAULT_FIELD, fieldFromPathname } from "@/lib/field-path";
 
 export function Header() {
   const pathname = usePathname();
@@ -16,38 +15,21 @@ export function Header() {
   const { categories } = useAdminContent();
   const field = fieldFromPathname(pathname);
 
-  const nav = useMemo(() => {
-    const seedBySlug = new Map(
-      topNav.map((item) => {
-        const slug = item.href.split("/").filter(Boolean).pop() ?? "";
-        return [slug, item] as const;
-      }),
-    );
-
-    const items = [...categories]
-      .filter((c) => (c.fieldSlug || DEFAULT_FIELD) === field)
-      .sort((a, b) => a.order - b.order)
-      .flatMap((c) => {
-        // DB navLabel 우선, React 시드 카테고리는 짧은 기본 라벨로 보충
-        const seed = field === DEFAULT_FIELD ? seedBySlug.get(c.slug) : undefined;
-        const navLabel =
-          c.navLabel?.trim() ||
-          seed?.label ||
-          (c.slug === "glossary" ? "단어사전" : undefined);
-        if (!navLabel) return [];
-        return [
-          {
-            label: navLabel,
-            href: categoryPublicHref(c.slug, field),
-          },
-        ];
-      });
-    if (field === DEFAULT_FIELD) return items;
-    if (items.some((item) => item.href === fieldPath(field, "/glossary"))) {
-      return items;
-    }
-    return [...items, { label: "단어사전", href: fieldPath(field, "/glossary") }];
-  }, [categories, field]);
+  // 헤더 메뉴 = navLabel이 있는 이 분야의 카테고리 (기본 라벨은 백엔드 시드가 채움)
+  const nav = useMemo(
+    () =>
+      categories
+        .filter(
+          (c) =>
+            (c.fieldSlug || DEFAULT_FIELD) === field && c.navLabel?.trim(),
+        )
+        .sort((a, b) => a.order - b.order)
+        .map((c) => ({
+          label: c.navLabel!.trim(),
+          href: categoryPublicHref(c.slug, field),
+        })),
+    [categories, field],
+  );
 
   return (
     <header className="sticky top-0 z-20 border-b border-neutral-200 bg-white">
