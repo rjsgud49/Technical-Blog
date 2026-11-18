@@ -13,7 +13,7 @@ export type FieldNavSection = {
   seedItems: NonNullable<NavSection["items"]>;
 };
 
-/** 분야 목차: DB order 기준. 시드 카테고리는 라벨·시드 글을 유지한다. */
+/** 분야 목차: DB order·라벨 기준. 시드는 하위 글 목록만 보충한다. */
 export function buildFieldNavSections(
   field: string,
   categories: ManagedCategory[],
@@ -40,8 +40,8 @@ export function buildFieldNavSections(
       key: cat.id,
       categoryId: cat.id,
       slug: cat.slug,
-      label: seed?.label ?? cat.label,
-      href: seed?.href ?? categoryPublicHref(cat.slug, field),
+      label: cat.label,
+      href: categoryPublicHref(cat.slug, field),
       seedItems: seed?.items ? [...seed.items] : [],
     });
   }

@@ -1,6 +1,6 @@
 /**
  * 학습 분야 목록.
- * 시드 + localStorage 커스텀 항목을 합쳐 사용합니다.
+ * 서버 목록을 받기 전에는 BUILTIN_SERVICES를 보여 줍니다.
  */
 export interface StudyService {
   id: string;
@@ -39,8 +39,6 @@ export const BUILTIN_SERVICES: StudyService[] = [
     builtin: true,
   },
 ];
-
-export const studyServices = BUILTIN_SERVICES;
 
 export function getCurrentService(
   list: StudyService[] = BUILTIN_SERVICES,

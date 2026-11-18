@@ -1,4 +1,4 @@
-/** 기본 사이트 로고 (기술스택 아이콘 모음/icon.JPG) */
+/** 기본 사이트 로고 */
 export const SITE_LOGO_SRC = "/brand/site-logo.jpg";
 
 const MAX_BYTES = 512 * 1024;

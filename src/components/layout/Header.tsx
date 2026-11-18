@@ -28,12 +28,11 @@ export function Header() {
       .filter((c) => (c.fieldSlug || DEFAULT_FIELD) === field)
       .sort((a, b) => a.order - b.order)
       .flatMap((c) => {
+        // DB navLabel 우선, React 시드 카테고리는 짧은 기본 라벨로 보충
         const seed = field === DEFAULT_FIELD ? seedBySlug.get(c.slug) : undefined;
-        if (seed) {
-          return [{ label: seed.label, href: seed.href }];
-        }
         const navLabel =
           c.navLabel?.trim() ||
+          seed?.label ||
           (c.slug === "glossary" ? "단어사전" : undefined);
         if (!navLabel) return [];
         return [

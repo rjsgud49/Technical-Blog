@@ -1,4 +1,5 @@
 import { apiFetch } from '@/lib/api/client';
+import { DEFAULT_FIELD } from '@/lib/field-path';
 import type {
   ContentAdminRepository,
   CreateCategoryInput,
@@ -44,8 +45,8 @@ export const apiContentAdminRepository: ContentAdminRepository = {
     return apiFetch<ManagedPost | null>(`/posts/by-id/${id}`);
   },
 
-  async getPostBySlug(slug, fieldSlug = "react") {
-    const field = encodeURIComponent(fieldSlug || "react");
+  async getPostBySlug(slug, fieldSlug = DEFAULT_FIELD) {
+    const field = encodeURIComponent(fieldSlug || DEFAULT_FIELD);
     return apiFetch<ManagedPost | null>(
       `/posts/${encodeURIComponent(slug)}?field=${field}`,
     );

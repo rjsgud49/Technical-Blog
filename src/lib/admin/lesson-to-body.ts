@@ -1,4 +1,4 @@
-import type { ContentBlock, InlineNode, Lesson } from "@/types/lesson";
+import type { ContentBlock, InlineNode } from "@/types/lesson";
 import { codeLanguageLabel } from "@/lib/admin/code-languages";
 
 function escapeHtml(s: string) {
@@ -60,19 +60,6 @@ function blockToHtml(block: ContentBlock): string {
     }    default:
       return "";
   }
-}
-
-/** 시드 Lesson → WYSIWYG용 HTML */
-export function lessonToBody(lesson: Lesson): string {
-  const parts: string[] = [];
-  for (const section of lesson.sections) {
-    parts.push(`<h2>${escapeHtml(section.title)}</h2>`);
-    for (const block of section.blocks) {
-      const html = blockToHtml(block).trim();
-      if (html) parts.push(html);
-    }
-  }
-  return parts.join("") || "<p></p>";
 }
 
 /** 시드 섹션 하나 → WYSIWYG용 HTML */

@@ -169,10 +169,11 @@ export function ManagedCategoryView({
     );
   }
 
-  const title = seedLesson?.title ?? category.label;
+  // 관리자에서 고친 DB 값이 시드 하드코딩보다 우선
+  const title = category.label;
   const description =
-    seedLesson?.description ||
     category.description?.trim() ||
+    seedLesson?.description ||
     "왼쪽 목차에서 주제를 고르거나, 아래에서 바로 읽어 보세요.";
   const leadDifficulty =
     seedLesson?.difficulty ?? sections[0]?.difficulty ?? fieldPosts[0]?.difficulty;

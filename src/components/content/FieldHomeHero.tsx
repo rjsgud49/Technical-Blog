@@ -9,7 +9,6 @@ import {
 } from "@/lib/admin/field-home-store";
 import { useFieldHome } from "@/lib/admin/use-field-home";
 import { fileToLogoDataUrl, resolveFieldLogo } from "@/lib/brand";
-import { isApiMode } from "@/lib/data-mode";
 import { fieldHome } from "@/lib/field-path";
 
 interface FieldHomeHeroProps {
@@ -33,9 +32,7 @@ export function FieldHomeHero({ fieldSlug, children }: FieldHomeHeroProps) {
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (isApiMode()) {
-      void hydrateFieldHomeFromApi(fieldSlug);
-    }
+    void hydrateFieldHomeFromApi(fieldSlug);
   }, [fieldSlug]);
 
   function startEdit() {

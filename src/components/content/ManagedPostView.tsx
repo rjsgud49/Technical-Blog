@@ -91,7 +91,7 @@ export function ManagedPostView({
         <button
           type="button"
           onClick={() => {
-            window.location.href = postSectionNavHref(post);
+            router.push(postSectionNavHref(post));
           }}
           className="text-sm text-neutral-600 hover:text-neutral-900"
         >
@@ -103,10 +103,10 @@ export function ManagedPostView({
         postId={post.id}
         compact
         onCancel={() => {
-          window.location.href = postSectionNavHref(post);
+          router.push(postSectionNavHref(post));
         }}
         onSaved={(saved) => {
-          window.location.href = postSectionNavHref(saved);
+          router.push(postSectionNavHref(saved));
         }}
         onDeleted={() => {
           router.push(categoryPublicHref(post.categorySlug, fieldSlug));

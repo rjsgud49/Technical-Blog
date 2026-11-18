@@ -233,10 +233,9 @@ if exist "%ROOT%\.env.local" (
   echo   .env.local 이미 있음 → 유지
 ) else (
   (
-    echo NEXT_PUBLIC_DATA_SOURCE=api
     echo NEXT_PUBLIC_API_URL=http://localhost:%API_PORT%/api
   ) > "%ROOT%\.env.local"
-  echo   OK .env.local 생성 ^(DATA_SOURCE=api^)
+  echo   OK .env.local 생성
 )
 echo.
 

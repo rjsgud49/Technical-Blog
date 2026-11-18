@@ -1,6 +1,5 @@
 import type { ManagedPost } from "@/types/admin";
-import type { ContentBlock, Lesson, LessonSection } from "@/types/lesson";
-import type { TopicCategory } from "@/types/content";
+import type { ContentBlock } from "@/types/lesson";
 import { p, h2 } from "@/lib/content/helpers";
 import { DEFAULT_FIELD, fieldPath } from "@/lib/field-path";
 
@@ -34,26 +33,6 @@ export function bodyToBlocks(body: string): ContentBlock[] {
     blocks.push(p("(본문이 비어 있습니다.)"));
   }
   return blocks;
-}
-
-export function managedPostToLesson(post: ManagedPost): Lesson {
-  const section: LessonSection = {
-    id: "body",
-    title: "본문",
-    difficulty: post.difficulty,
-    blocks: bodyToBlocks(post.body),
-  };
-
-  return {
-    id: `managed/${post.slug}`,
-    slug: post.slug,
-    title: post.title,
-    description: post.description,
-    category: post.categorySlug as TopicCategory,
-    difficulty: post.difficulty,
-    readingTime: post.readingTime,
-    sections: [section],
-  };
 }
 
 export function postPublicHref(post: ManagedPost) {
@@ -93,8 +72,4 @@ export function postSectionNavHref(post: ManagedPost) {
   const hashIdx = href.indexOf("#");
   if (hashIdx === -1) return href;
   return `${href.slice(0, hashIdx)}?section=${encodeURIComponent(href.slice(hashIdx + 1))}`;
-}
-
-export function fieldHomeHref(fieldSlug = DEFAULT_FIELD) {
-  return fieldPath(fieldSlug);
 }

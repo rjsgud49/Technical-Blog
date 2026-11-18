@@ -31,19 +31,6 @@ function lessonToTopic(lesson: Lesson): Topic {
   };
 }
 
-/** lesson id → 라우트 (예: hooks/use-state → /react/hooks#use-state) */
-export function lessonIdToHref(id: string): string {
-  if (id.includes("/")) {
-    const [category, ...rest] = id.split("/");
-    const slug = rest.join("/");
-    if (category === "hooks" || category === "patterns") {
-      return fieldPath(DEFAULT_FIELD, `/${category}#${slug}`);
-    }
-    return fieldPath(DEFAULT_FIELD, `/${category}/${slug}`);
-  }
-  return fieldPath(DEFAULT_FIELD, `/${id}`);
-}
-
 export const localContentRepository: ContentRepository = {
   async listTopics() {
     return lessons.map(lessonToTopic);

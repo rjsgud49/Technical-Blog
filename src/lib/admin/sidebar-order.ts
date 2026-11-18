@@ -44,7 +44,3 @@ export function setSidebarOrder(sectionId: string, keys: string[]) {
   map[sectionId] = keys;
   writeMap(map);
 }
-
-export function getSidebarOrder(sectionId: string): string[] | null {
-  return readMap()[sectionId] ?? null;
-}

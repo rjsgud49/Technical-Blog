@@ -31,7 +31,6 @@ export const CODE_LANGUAGES = [
   { id: "plaintext", label: "Plain text" },
 ] as const;
 
-export type CodeLanguageId = (typeof CODE_LANGUAGES)[number]["id"];
 
 export function codeLanguageLabel(id: string | null | undefined): string {
   if (!id) return "";

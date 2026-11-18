@@ -9,7 +9,14 @@ import { useAdminContent } from "@/components/admin/AdminContentProvider";
 import { categoryPublicHref } from "@/lib/admin/post-mapper";
 import { DEFAULT_FIELD } from "@/lib/field-path";
 
-export function FieldHomeView({ fieldSlug }: { fieldSlug: string }) {
+export function FieldHomeView({
+  fieldSlug,
+  children,
+}: {
+  fieldSlug: string;
+  /** 히어로 하단 추가 영역 */
+  children?: React.ReactNode;
+}) {
   const { session } = useAuth();
   const { categories, posts } = useAdminContent();
 
@@ -17,8 +24,18 @@ export function FieldHomeView({ fieldSlug }: { fieldSlug: string }) {
     () =>
       categories
         .filter((c) => (c.fieldSlug || DEFAULT_FIELD) === fieldSlug)
+        // 빈 '카테고리없음'은 사이드바처럼 숨김
+        .filter(
+          (c) =>
+            c.slug !== "uncategorized" ||
+            posts.some(
+              (p) =>
+                p.categorySlug === c.slug &&
+                (p.fieldSlug || DEFAULT_FIELD) === fieldSlug,
+            ),
+        )
         .sort((a, b) => a.order - b.order),
-    [categories, fieldSlug],
+    [categories, posts, fieldSlug],
   );
 
   const postCount = useMemo(
@@ -43,6 +60,7 @@ export function FieldHomeView({ fieldSlug }: { fieldSlug: string }) {
             </>
           )}
         </p>
+        {children}
       </FieldHomeHero>
 
       {session && fieldCategories.length > 0 && (

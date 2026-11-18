@@ -30,22 +30,9 @@ export class StudyServicesService {
   ) {}
 
   async list() {
+    // react 분야는 SeedService가 부팅 시 DB에 보장한다
     const rows = await this.services.find({ order: { createdAt: 'ASC' } });
-    const hasReact = rows.some((r) => r.path === 'react');
-    const list = rows.map(toStudyServiceDto);
-    if (!hasReact) {
-      list.unshift({
-        id: 'react',
-        name: 'rjsgud study',
-        shortName: 'RJ',
-        description: 'React 역사 · 구조 · 훅 · 패턴',
-        path: 'react',
-        href: '/react',
-        comingSoon: false,
-        builtin: true,
-      });
-    }
-    return list;
+    return rows.map(toStudyServiceDto);
   }
 
   async create(dto: CreateStudyServiceDto) {

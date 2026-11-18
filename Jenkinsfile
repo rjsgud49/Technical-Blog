@@ -14,7 +14,6 @@ pipeline {
         NODE_DIR = 'C:\\Program Files\\nodejs'
         NEXT_TELEMETRY_DISABLED = '1'
         NEXT_PUBLIC_API_URL = '/api'
-        NEXT_PUBLIC_DATA_SOURCE = 'api'
     }
 
     stages {

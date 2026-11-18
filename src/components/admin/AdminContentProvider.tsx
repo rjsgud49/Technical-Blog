@@ -8,7 +8,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { getContentAdminRepository } from "@/lib/admin/content-store";
+import { apiContentAdminRepository as repo } from "@/lib/admin/api-content-store";
 import type {
   CreateCategoryInput,
   CreatePostInput,
@@ -42,7 +42,6 @@ export function AdminContentProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const repo = useMemo(() => getContentAdminRepository(), []);
   const [categories, setCategories] = useState<ManagedCategory[]>([]);
   const [posts, setPosts] = useState<ManagedPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,23 +53,13 @@ export function AdminContentProvider({
     ]);
     setCategories(cats);
     setPosts(list);
-  }, [repo]);
+  }, []);
 
   useEffect(() => {
     void (async () => {
       await refresh();
       setLoading(false);
     })();
-
-    const onChange = () => {
-      void refresh();
-    };
-    window.addEventListener("rs-content-changed", onChange);
-    window.addEventListener("storage", onChange);
-    return () => {
-      window.removeEventListener("rs-content-changed", onChange);
-      window.removeEventListener("storage", onChange);
-    };
   }, [refresh]);
 
   const value = useMemo<AdminContentContextValue>(
@@ -116,7 +105,7 @@ export function AdminContentProvider({
         await refresh();
       },
     }),
-    [categories, posts, loading, refresh, repo],
+    [categories, posts, loading, refresh],
   );
 
   return (

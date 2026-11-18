@@ -22,5 +22,5 @@ export default async function CategoryPage({ params }: PageProps) {
   if (isBuiltinCategory(slug)) {
     redirect(categoryPublicHref(slug, DEFAULT_FIELD));
   }
-  return <ManagedCategoryView slug={slug} fieldSlug="react" />;
+  return <ManagedCategoryView slug={slug} fieldSlug={DEFAULT_FIELD} />;
 }

@@ -1,6 +1,6 @@
 # React Structure API
 
-NestJS + TypeORM + MySQL. 프론트(`NEXT_PUBLIC_DATA_SOURCE=api`)와 같은 스키마로 맞춥니다.
+NestJS + TypeORM + MySQL. 프론트가 이 API만 데이터 소스로 사용합니다.
 
 ## 빠른 시작
 

@@ -1,5 +1,5 @@
 import type { NavSection } from "@/types/content";
-import { DEFAULT_FIELD, fieldHome, fieldPath } from "@/lib/field-path";
+import { DEFAULT_FIELD, fieldPath } from "@/lib/field-path";
 
 export const siteConfig = {
   name: "rjsgud study",
@@ -92,4 +92,3 @@ export const sidebarSections: NavSection[] = [
   },
 ];
 
-export const reactHome = fieldHome(F);

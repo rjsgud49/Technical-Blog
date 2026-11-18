@@ -17,13 +17,11 @@ import {
 import {
   createStudyServiceAsync,
   deleteStudyServiceAsync,
-  ensureStudyServiceGlossaries,
   hydrateStudyServicesFromApi,
 } from "@/lib/admin/services-store";
 import { useStudyServices } from "@/lib/admin/use-study-services";
 import { useFieldHome } from "@/lib/admin/use-field-home";
 import { resolveFieldLogo } from "@/lib/brand";
-import { isApiMode } from "@/lib/data-mode";
 import { fieldFromPathname, normalizeFieldSlug } from "@/lib/field-path";
 
 function isExternal(href: string) {
@@ -72,18 +70,12 @@ export function ServiceSwitcher() {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    if (isApiMode()) {
-      void hydrateStudyServicesFromApi();
-      void hydrateFieldHomeFromApi(fieldSlug);
-    }
+    void hydrateStudyServicesFromApi();
+    void hydrateFieldHomeFromApi(fieldSlug);
   }, [fieldSlug]);
 
   useEffect(() => {
-    if (!isApiMode()) void ensureStudyServiceGlossaries();
-  }, [services]);
-
-  useEffect(() => {
-    if (!open || !isApiMode()) return;
+    if (!open) return;
     for (const s of services) {
       void hydrateFieldHomeFromApi(s.path);
     }
