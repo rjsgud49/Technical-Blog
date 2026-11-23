@@ -6,6 +6,7 @@ import Blockquote from "@tiptap/extension-blockquote";
 import Placeholder from "@tiptap/extension-placeholder";
 import Underline from "@tiptap/extension-underline";
 import Link from "@tiptap/extension-link";
+import { TableKit } from "@tiptap/extension-table";
 import { useEffect, useRef, useState } from "react";
 import { plainTextToHtml } from "@/lib/admin/html-body";
 import { fileToArticleSrc } from "@/lib/admin/article-image";
@@ -78,6 +79,7 @@ export function WysiwygEditor({
       }),
       Callout,
       ResizableImage,
+      TableKit,
       Placeholder.configure({ placeholder }),
     ],
     content: toEditorHtml(value),
@@ -400,6 +402,42 @@ export function WysiwygEditor({
           label="⸻"
           onClick={() => editor.chain().focus().setHorizontalRule().run()}
         />
+        <ToolbarBtn
+          label="표"
+          active={editor.isActive("table")}
+          onClick={() =>
+            editor
+              .chain()
+              .focus()
+              .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+              .run()
+          }
+        />
+        {editor.isActive("table") && (
+          <>
+            <Sep />
+            <ToolbarBtn
+              label="행+"
+              onClick={() => editor.chain().focus().addRowAfter().run()}
+            />
+            <ToolbarBtn
+              label="열+"
+              onClick={() => editor.chain().focus().addColumnAfter().run()}
+            />
+            <ToolbarBtn
+              label="행−"
+              onClick={() => editor.chain().focus().deleteRow().run()}
+            />
+            <ToolbarBtn
+              label="열−"
+              onClick={() => editor.chain().focus().deleteColumn().run()}
+            />
+            <ToolbarBtn
+              label="표 삭제"
+              onClick={() => editor.chain().focus().deleteTable().run()}
+            />
+          </>
+        )}
       </div>
       <input
         ref={fileInputRef}

@@ -68,6 +68,7 @@ export function ServiceSwitcher() {
   const home = useFieldHome(fieldSlug);
   useFieldHomeTick();
   const [open, setOpen] = useState(false);
+  const [gridOpen, setGridOpen] = useState(false);
 
   useEffect(() => {
     void hydrateStudyServicesFromApi();
@@ -75,11 +76,11 @@ export function ServiceSwitcher() {
   }, [fieldSlug]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open && !gridOpen) return;
     for (const s of services) {
       void hydrateFieldHomeFromApi(s.path);
     }
-  }, [open, services]);
+  }, [open, gridOpen, services]);
 
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
@@ -143,6 +144,18 @@ export function ServiceSwitcher() {
     }
   }
 
+  function serviceView(service: StudyService) {
+    const fieldHome = getFieldHomeSnapshot(service.path);
+    return {
+      active: service.path === current.path || service.id === current.id,
+      label:
+        service.path === fieldSlug
+          ? displayName
+          : fieldHome.title || service.name,
+      logoSrc: resolveFieldLogo(fieldHome.logoDataUrl),
+    };
+  }
+
   async function onDelete(service: StudyService) {
     if (service.builtin) return;
     if (!confirm(`「${service.name}」분야를 삭제할까요?`)) return;
@@ -183,6 +196,18 @@ export function ServiceSwitcher() {
         >
           <div className="flex items-center justify-between px-3 py-2">
             <p className="text-xs font-medium text-neutral-400">분야 이동</p>
+            <span className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                setAdding(false);
+                setGridOpen(true);
+              }}
+              className="rounded-md px-2 py-0.5 text-xs font-medium text-neutral-600 hover:bg-neutral-100"
+            >
+              전체 보기
+            </button>
             {session && (
               <button
                 type="button"
@@ -195,6 +220,7 @@ export function ServiceSwitcher() {
                 {adding ? "닫기" : "+ 새 분야"}
               </button>
             )}
+            </span>
           </div>
 
           {adding && session && (
@@ -250,16 +276,9 @@ export function ServiceSwitcher() {
             </form>
           )}
 
-          <ul>
+          <ul className="max-h-[60vh] overflow-y-auto">
             {services.map((service) => {
-              const active =
-                service.path === current.path || service.id === current.id;
-              const fieldHome = getFieldHomeSnapshot(service.path);
-              const label =
-                service.path === fieldSlug
-                  ? displayName
-                  : fieldHome.title || service.name;
-              const logoSrc = resolveFieldLogo(fieldHome.logoDataUrl);
+              const { active, label, logoSrc } = serviceView(service);
               const className = `flex w-full items-start gap-3 px-3 py-2.5 text-left transition-colors duration-150 ${
                 active ? "bg-primary-50" : "hover:bg-neutral-50"
               }`;
@@ -338,7 +357,104 @@ export function ServiceSwitcher() {
           )}
         </div>
       )}
+
+      <FieldGridDialog open={gridOpen} onClose={() => setGridOpen(false)}>
+        {services.map((service) => {
+          const { active, label, logoSrc } = serviceView(service);
+          const className = `flex aspect-square flex-col items-center justify-center gap-2 rounded-xl border p-3 text-center transition-colors duration-150 ${
+            active
+              ? "border-primary-300 bg-primary-50"
+              : "border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50"
+          }`;
+          const body = (
+            <>
+              <FieldMark src={logoSrc} size="lg" />
+              <span className="w-full truncate text-sm font-semibold text-neutral-900">
+                {label}
+              </span>
+              <span className="w-full truncate text-xs text-neutral-400">
+                /{service.path}
+              </span>
+            </>
+          );
+          return (
+            <li key={service.id}>
+              {isExternal(service.href) ? (
+                <a
+                  href={service.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={service.description}
+                  className={className}
+                  onClick={() => setGridOpen(false)}
+                >
+                  {body}
+                </a>
+              ) : (
+                <Link
+                  href={service.href}
+                  title={service.description}
+                  aria-current={active ? "page" : undefined}
+                  className={className}
+                  onClick={() => setGridOpen(false)}
+                >
+                  {body}
+                </Link>
+              )}
+            </li>
+          );
+        })}
+      </FieldGridDialog>
     </div>
+  );
+}
+
+/** 분야 전체를 네모 타일로 보는 모달 (native dialog: 포커스 가두기·Esc 기본 제공) */
+function FieldGridDialog({
+  open,
+  onClose,
+  children,
+}: {
+  open: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  const ref = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const dialog = ref.current;
+    if (!dialog) return;
+    if (open && !dialog.open) dialog.showModal();
+    if (!open && dialog.open) dialog.close();
+  }, [open]);
+
+  return (
+    <dialog
+      ref={ref}
+      onClose={onClose}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose(); // 바깥(backdrop) 클릭
+      }}
+      aria-labelledby="field-grid-title"
+      className="m-auto w-[min(44rem,calc(100vw-2rem))] rounded-2xl border border-neutral-200 bg-white p-0 shadow-xl backdrop:bg-neutral-900/40"
+    >
+      <div className="flex items-center justify-between border-b border-neutral-100 px-5 py-3">
+        <h2 id="field-grid-title" className="text-sm font-semibold text-neutral-900">
+          전체 학습 분야
+        </h2>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="닫기"
+          className="rounded-md px-2 py-1 text-sm text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700"
+        >
+          ✕
+        </button>
+      </div>
+      <ul className="grid max-h-[70vh] grid-cols-2 gap-3 overflow-y-auto p-5 sm:grid-cols-3 md:grid-cols-4">
+        {children}
+      </ul>
+    </dialog>
   );
 }
 
@@ -347,9 +463,10 @@ function FieldMark({
   size = "sm",
 }: {
   src: string;
-  size?: "sm" | "md";
+  size?: "sm" | "md" | "lg";
 }) {
-  const box = size === "md" ? "h-8 w-8" : "h-7 w-7";
+  const box =
+    size === "lg" ? "h-12 w-12" : size === "md" ? "h-8 w-8" : "h-7 w-7";
   return (
     <span
       className={`flex ${box} shrink-0 overflow-hidden rounded-md bg-neutral-100 ring-1 ring-neutral-200`}

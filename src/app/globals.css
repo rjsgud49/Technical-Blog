@@ -184,6 +184,49 @@ body {
   color: inherit;
 }
 
+/* 표: 좁은 화면에서는 가로 스크롤 */
+.prose-editor table,
+.prose-content table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 0.85em 0;
+  border-collapse: collapse;
+  font-size: 0.925rem;
+}
+
+.prose-editor th,
+.prose-editor td,
+.prose-content th,
+.prose-content td {
+  min-width: 4rem;
+  padding: 0.45em 0.75em;
+  border: 1px solid var(--color-neutral-200);
+  text-align: left;
+  vertical-align: top;
+  line-height: 1.55;
+}
+
+.prose-editor th,
+.prose-content th {
+  background: var(--color-neutral-50);
+  font-weight: 600;
+  color: var(--color-neutral-800);
+}
+
+.prose-editor th p,
+.prose-editor td p,
+.prose-content th p,
+.prose-content td p {
+  margin: 0;
+  font-size: inherit;
+}
+
+/* 에디터에서 선택된 셀 */
+.prose-editor .selectedCell {
+  background: var(--color-primary-50);
+}
+
 .prose-editor pre,
 .prose-content pre {
   position: relative;
