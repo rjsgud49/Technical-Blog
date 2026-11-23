@@ -7,7 +7,6 @@ import { DifficultyBadge } from "@/components/ui/DifficultyBadge";
 import { ContentRenderer } from "@/components/content/ContentRenderer";
 import { HtmlBody } from "@/components/content/HtmlBody";
 import { WriteCta } from "@/components/writer/WriteCta";
-import { SectionEditLink } from "@/components/writer/SectionEditLink";
 import { ScrollToSection } from "@/components/content/ScrollToSection";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useAdminContent } from "@/components/admin/AdminContentProvider";
@@ -16,7 +15,7 @@ import { bodyToBlocks, postPublicHref } from "@/lib/admin/post-mapper";
 import { DEFAULT_FIELD, fieldHome } from "@/lib/field-path";
 import { slugsEqual } from "@/lib/slugify";
 import type { ManagedPost } from "@/types/admin";
-import type { ContentBlock, Lesson, LessonSection } from "@/types/lesson";
+import type { ContentBlock } from "@/types/lesson";
 import type { Difficulty } from "@/types/content";
 
 type DisplaySection = {
@@ -27,19 +26,15 @@ type DisplaySection = {
   description?: string;
   blocks: ContentBlock[] | null;
   html: string | null;
-  post: ManagedPost | null;
-  seed: LessonSection | null;
+  post: ManagedPost;
 };
 
 export function ManagedCategoryView({
   slug,
   fieldSlug = DEFAULT_FIELD,
-  seedLesson,
 }: {
   slug: string;
   fieldSlug?: string;
-  /** React 시드(history·structure 등) — Vue와 같은 읽기+섹션 수정 UI */
-  seedLesson?: Lesson | null;
 }) {
   const { session } = useAuth();
   const { categories, posts, loading } = useAdminContent();
@@ -53,24 +48,8 @@ export function ManagedCategoryView({
           slugsEqual(c.slug, slug) &&
           (c.fieldSlug || DEFAULT_FIELD) === fieldSlug,
       ) ?? null;
-    if (found) return found;
-    // 시드 카테고리만 있고 DB/로컬에 커스텀 row가 없을 때
-    if (seedLesson && seedLesson.category === slug) {
-      return {
-        id: `seed-${slug}`,
-        slug,
-        label: seedLesson.title,
-        navLabel: undefined as string | undefined,
-        description: seedLesson.description,
-        fieldSlug,
-        order: 0,
-        builtin: true,
-        createdAt: "",
-        updatedAt: "",
-      };
-    }
-    return null;
-  }, [categories, slug, fieldSlug, loading, seedLesson]);
+    return found;
+  }, [categories, slug, fieldSlug, loading]);
 
   const fieldPosts = useMemo(() => {
     let list = posts.filter(
@@ -86,44 +65,9 @@ export function ManagedCategoryView({
     );
   }, [posts, slug, fieldSlug, session]);
 
-  const sections = useMemo((): DisplaySection[] => {
-    const bySlug = new Map(fieldPosts.map((p) => [p.slug, p]));
-    const out: DisplaySection[] = [];
-
-    if (seedLesson) {
-      for (const sec of seedLesson.sections) {
-        const post = bySlug.get(sec.id);
-        if (post) {
-          bySlug.delete(sec.id);
-          out.push({
-            key: post.id,
-            id: post.slug,
-            title: post.published ? post.title : `[비공개] ${post.title}`,
-            difficulty: post.difficulty,
-            description: post.description,
-            blocks: isHtmlBody(post.body) ? null : bodyToBlocks(post.body),
-            html: isHtmlBody(post.body) ? post.body : null,
-            post,
-            seed: sec,
-          });
-        } else {
-          out.push({
-            key: `seed:${sec.id}`,
-            id: sec.id,
-            title: sec.title,
-            difficulty: sec.difficulty,
-            description: undefined,
-            blocks: sec.blocks,
-            html: null,
-            post: null,
-            seed: sec,
-          });
-        }
-      }
-    }
-
-    for (const post of bySlug.values()) {
-      out.push({
+  const sections = useMemo(
+    (): DisplaySection[] =>
+      fieldPosts.map((post) => ({
         key: post.id,
         id: post.slug,
         title: post.published ? post.title : `[비공개] ${post.title}`,
@@ -132,24 +76,17 @@ export function ManagedCategoryView({
         blocks: isHtmlBody(post.body) ? null : bodyToBlocks(post.body),
         html: isHtmlBody(post.body) ? post.body : null,
         post,
-        seed: null,
-      });
-    }
-
-    return out;
-  }, [seedLesson, fieldPosts]);
+      })),
+    [fieldPosts],
+  );
 
   const totalReading = useMemo(() => {
-    if (seedLesson?.readingTime && fieldPosts.length === 0) {
-      return seedLesson.readingTime;
-    }
     const mins = fieldPosts.reduce((sum, p) => {
       const n = parseInt(p.readingTime, 10);
       return sum + (Number.isFinite(n) ? n : 0);
     }, 0);
-    if (mins > 0) return `${mins} min`;
-    return seedLesson?.readingTime ?? null;
-  }, [fieldPosts, seedLesson]);
+    return mins > 0 ? `${mins} min` : null;
+  }, [fieldPosts]);
 
   if (category === undefined) {
     return <p className="text-sm text-neutral-500">불러오는 중…</p>;
@@ -169,14 +106,11 @@ export function ManagedCategoryView({
     );
   }
 
-  // 관리자에서 고친 DB 값이 시드 하드코딩보다 우선
   const title = category.label;
   const description =
     category.description?.trim() ||
-    seedLesson?.description ||
     "왼쪽 목차에서 주제를 고르거나, 아래에서 바로 읽어 보세요.";
-  const leadDifficulty =
-    seedLesson?.difficulty ?? sections[0]?.difficulty ?? fieldPosts[0]?.difficulty;
+  const leadDifficulty = sections[0]?.difficulty;
   const tagLabel = category.navLabel || category.label;
 
   return (
@@ -255,27 +189,14 @@ export function ManagedCategoryView({
                     <DifficultyBadge level={sec.difficulty} />
                   )}
                 </div>
-                {sec.post ? (
-                  session && (
-                    <Link
-                      href={`${postPublicHref(sec.post)}?edit=1`}
-                      className="text-sm font-medium text-neutral-500 hover:text-primary-600"
-                    >
-                      수정
-                    </Link>
-                  )
-                ) : sec.seed ? (
-                  <SectionEditLink
-                    categorySlug={slug}
-                    fieldSlug={fieldSlug}
-                    sectionId={sec.seed.id}
-                    title={sec.seed.title}
-                    difficulty={sec.seed.difficulty}
-                    readingTime={seedLesson?.readingTime}
-                    description={seedLesson?.description}
-                    blocks={sec.seed.blocks}
-                  />
-                ) : null}
+                {session && (
+                  <Link
+                    href={`${postPublicHref(sec.post)}?edit=1`}
+                    className="text-sm font-medium text-neutral-500 hover:text-primary-600"
+                  >
+                    수정
+                  </Link>
+                )}
               </div>
               {sec.description && (
                 <p className="mb-4 max-w-prose text-sm text-neutral-500">

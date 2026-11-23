@@ -483,11 +483,7 @@ function SortableSectionList({
         const sectionActive =
           pathname === section.href ||
           pathname.startsWith(`${section.href}/`);
-        const items = mergeSectionNavItems(
-          section.slug,
-          section.seedItems,
-          publishedPosts,
-        );
+        const items = mergeSectionNavItems(section.slug, publishedPosts);
         const category = categories.find((item) => item.id === section.categoryId);
         const draggable = canDrag && Boolean(section.categoryId);
 

@@ -37,11 +37,7 @@ export function MobileToc() {
       id: section.slug,
       label: section.label,
       href: section.href,
-      items: mergeSectionNavItems(
-        section.slug,
-        section.seedItems,
-        published,
-      ),
+      items: mergeSectionNavItems(section.slug, published),
     }));
   }, [categories, posts, field]);
 
